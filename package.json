@@ -8,6 +8,16 @@
     "socket.io": "^2.1.1"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "nodemon --exec \"heroku local debug\" -e js"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "heroku": "^7.0.91",
+    "nodemon": "^1.17.5"
   }
 }
