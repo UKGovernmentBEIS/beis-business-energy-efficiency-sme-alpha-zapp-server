@@ -14,19 +14,30 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('disconnect', () => {
-    console.log(`DISCONNECTED`)
-    if (socket.room) {
-      socket.leave(socket.room)
-      const usersRemaining = calculateCurrentUsers(socket.room)
-      console.log(`Currently ${usersRemaining} user(s) on ${socket.room} network`)
-      if (usersRemaining < 2) {
-        socket.to(socket.room).emit('lastManReminder', 'You are the last person in the office. Remember to turn off the lights')
-      }
-    }
+  socket.on('sessionLock', (socket) => {
+    console.log('COMPUTER LOCKED')
+    leaveRoom(socket)
   })
+
+  socket.on('disconnect', (socket) => {
+    console.log(`DISCONNECTED`)
+    leaveRoom(socket)
+  })
+
   socket.on('network', network => console.log(`NETWORK: ${network}`))
 })
+
+function leaveRoom (socket) {
+  if (socket && socket.room) {
+    socket.leave(socket.room)
+    const usersRemaining = calculateCurrentUsers(socket.room)
+    console.log(`Currently ${usersRemaining} user(s) on ${socket.room} network`)
+    if (usersRemaining < 2) {
+      socket.to(socket.room).emit('lastManReminder')
+      console.log('Last man reminder sent')
+    }
+  }
+}
 
 function calculateCurrentUsers (room) {
   if (io.sockets.adapter.rooms[room]) {
