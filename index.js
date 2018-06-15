@@ -2,61 +2,55 @@ const app = require('express')()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   console.log('CONNECTED')
 
-  socket.on('join', (network) => {
+  socket.on('join', network => {
     console.log(`Network - ${network}`)
-    socket.room = selectRoom(network)
-    if (socket.room) {
-      socket.join(socket.room)
-      console.log(`Currently ${calculateCurrentUsers(socket.room)} user(s) on ${socket.room} network`)
+    const room = selectRoom(network)
+    if (room) {
+      socket.join(room)
+      console.log(`Currently ${getRoomUsersCount(room)} user(s) on ${room} network`)
     }
-  })
 
-  socket.on('sessionLock', (socket) => {
-    console.log('COMPUTER LOCKED')
-    leaveRoom(socket)
-  })
+    socket.on('session-lock', () => {
+      console.log('COMPUTER LOCKED')
+      socket.leave(room)
+      handleLeave(room)
+    })
 
-  socket.on('disconnect', (socket) => {
-    console.log(`DISCONNECTED`)
-    leaveRoom(socket)
+    socket.on('disconnect', () => {
+      console.log(`DISCONNECTED`)
+      handleLeave(room)
+    })
   })
 
   socket.on('network', network => console.log(`NETWORK: ${network}`))
 })
 
-function leaveRoom (socket) {
-  if (socket && socket.room) {
-    socket.leave(socket.room)
-    const usersRemaining = calculateCurrentUsers(socket.room)
-    console.log(`Currently ${usersRemaining} user(s) on ${socket.room} network`)
-    if (usersRemaining < 2) {
-      socket.to(socket.room).emit('lastManReminder')
-      console.log('Last man reminder sent')
-    }
-  }
+const NETWORK_ROOM_MAP = {
+  'zoo.lan': 'Softwire'
 }
-
-function calculateCurrentUsers (room) {
-  if (io.sockets.adapter.rooms[room]) {
-    return io.sockets.adapter.rooms[room].length
-  } else {
-    return 0
-  }
-}
-
 function selectRoom (network) {
-  if (networkMap[network]) {
-    return networkMap[network]
-  } else {
+  const room = NETWORK_ROOM_MAP[network]
+  if (!room) {
     console.log(`This network is not currently registered with RemindS Me.`)
   }
+  return room
 }
 
-const networkMap = {
-  'zoo.lan': 'Softwire'
+function handleLeave (room) {
+  const usersRemaining = getRoomUsersCount(room)
+  console.log(`Currently ${usersRemaining} user(s) on ${room} network.`)
+  if (usersRemaining === 1) {
+    io.sockets.in(room).emit('last-man-reminder')
+    console.log('Last man reminder sent.')
+  }
+}
+
+function getRoomUsersCount (room) {
+  const roomUsers = io.sockets.adapter.rooms[room]
+  return roomUsers ? roomUsers.length : 0
 }
 
 const port = process.env.PORT || 5000
