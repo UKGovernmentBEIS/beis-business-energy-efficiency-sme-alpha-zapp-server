@@ -5,24 +5,19 @@ const io = require('socket.io')(http)
 io.on('connection', socket => {
   console.log('CONNECTED')
 
+  let room = null
   socket.on('join', network => {
     console.log(`Network - ${network}`)
-    const room = selectRoom(network)
+    room = selectRoom(network)
     if (room) {
       socket.join(room)
       console.log(`Currently ${getRoomUsersCount(room)} user(s) on ${room} network`)
     }
+  })
 
-    socket.on('session-lock', () => {
-      console.log('COMPUTER LOCKED')
-      socket.leave(room)
-      handleLeave(room)
-    })
-
-    socket.on('disconnect', () => {
-      console.log(`DISCONNECTED`)
-      handleLeave(room)
-    })
+  socket.on('disconnect', () => {
+    console.log(`DISCONNECTED`)
+    handleLeave(room)
   })
 
   socket.on('network', network => console.log(`NETWORK: ${network}`))
