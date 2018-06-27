@@ -2,50 +2,54 @@ const app = require('express')()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 
-io.on('connection', socket => {
-  console.log('CONNECTED')
+const HEATING = 'HEATING'
 
-  let room = null
-  socket.on('join', network => {
-    console.log(`Network - ${network}`)
-    room = selectRoom(network)
-    if (room) {
-      socket.join(room)
-      console.log(`Currently ${getRoomUsersCount(room)} user(s) on ${room} network`)
+io.on('connection', socket => {
+  logSocketMessage(socket, 'Connected.')
+  let network = null
+  socket.on('join', (networkId, heatingOptIn) => {
+    network = getNetwork(networkId)
+    if (network) {
+      socket.join(network)
+      updateNetworkUsersCount(network)
+      if (heatingOptIn) {
+        const heatingNotificationRoom = getNotificationRoom(network, HEATING)
+        socket.join(heatingNotificationRoom)
+        logSocketMessage(socket, `Opted in for notifications from ${heatingNotificationRoom}.`)
+      }
+    } else {
+      logSocketMessage(socket, `No network found for network ID '${networkId}'.`)
     }
   })
-
   socket.on('disconnect', () => {
-    console.log(`DISCONNECTED`)
-    handleLeave(room)
+    logSocketMessage(socket, 'Disconnected.')
+    if (network) {
+      updateNetworkUsersCount(network)
+    }
   })
-
-  socket.on('network', network => console.log(`NETWORK: ${network}`))
 })
 
-const NETWORK_ROOM_MAP = {
+const NETWORK_MAP = {
   'zoo.lan': 'Softwire'
 }
-function selectRoom (network) {
-  const room = NETWORK_ROOM_MAP[network]
-  if (!room) {
-    console.log(`This network is not currently registered with RemindS Me.`)
-  }
-  return room
+
+function getNetwork (networkId) {
+  return NETWORK_MAP[networkId]
 }
 
-function handleLeave (room) {
-  const usersRemaining = getRoomUsersCount(room)
-  console.log(`Currently ${usersRemaining} user(s) on ${room} network.`)
-  if (usersRemaining === 1) {
-    io.sockets.in(room).emit('last-man-reminder')
-    console.log('Last man reminder sent.')
-  }
+function getNotificationRoom (network, notificationType) {
+  return `${network}_${notificationType}`
 }
 
-function getRoomUsersCount (room) {
-  const roomUsers = io.sockets.adapter.rooms[room]
-  return roomUsers ? roomUsers.length : 0
+function updateNetworkUsersCount (network) {
+  const roomUsers = io.sockets.adapter.rooms[network]
+  const count = roomUsers ? roomUsers.length : 0
+  console.log(`Currently ${count} user(s) on ${network} network.`)
+  io.sockets.in(network).emit('network-count-change', count)
+}
+
+function logSocketMessage (socket, message) {
+  console.log(`[${socket.id}] ${message}`)
 }
 
 const port = process.env.PORT || 5000
