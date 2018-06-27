@@ -1,8 +1,16 @@
 const app = require('express')()
+const s3Proxy = require('s3-proxy')
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 
 const HEATING = 'HEATING'
+
+app.get('/Releases/*', s3Proxy({
+  bucket: 'beis-sme-alpha',
+  region: 'eu-west-2',
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+}))
 
 io.on('connection', socket => {
   logSocketMessage(socket, 'Connected.')
