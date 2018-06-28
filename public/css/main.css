@@ -1,0 +1,13 @@
+body {
+    margin: 80px 80px;
+}
+
+h1 {
+    font-size: 60px;
+    margin-bottom: 60px;
+}
+
+
+.header {
+    display: flex;
+}
