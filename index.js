@@ -19,6 +19,7 @@ io.on('connection', socket => {
     network = getNetwork(networkId)
     if (network) {
       socket.join(network)
+      logSocketMessage(socket, `Joined ${network} network.`)
       updateNetworkUsersCount(network)
       if (heatingOptIn) {
         const heatingNotificationRoom = getNotificationRoom(network, HEATING)
