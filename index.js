@@ -15,13 +15,13 @@ app.get('/Releases/*', s3Proxy({
 
 io.on('connection', socket => {
   let network = null
-  let pseudonym = null
+  let userPseudonym = null
 
-  const log = message => console.log(`[${network} | ${pseudonym}] ${message}`)
+  const log = message => console.log(`[${network} | ${userPseudonym}] ${message}`)
 
-  socket.on('join', (networkId, pseudo) => {
+  socket.on('join', (networkId, pseudonym) => {
     network = getNetwork(networkId)
-    pseudonym = pseudo
+    userPseudonym = pseudonym
     if (network) {
       socket.join(network)
       log('Connected.')
