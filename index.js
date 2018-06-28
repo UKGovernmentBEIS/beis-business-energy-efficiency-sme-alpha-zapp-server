@@ -1,7 +1,10 @@
-const app = require('express')()
+const express = require('express')
+const app = express()
 const s3Proxy = require('s3-proxy')
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
+
+app.use(express.static('public'))
 
 app.get('/Releases/*', s3Proxy({
   bucket: 'beis-sme-alpha',
