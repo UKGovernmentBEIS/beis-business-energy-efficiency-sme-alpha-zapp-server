@@ -3,8 +3,6 @@ const s3Proxy = require('s3-proxy')
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 
-const HEATING = 'HEATING'
-
 app.get('/Releases/*', s3Proxy({
   bucket: 'beis-sme-alpha',
   region: 'eu-west-2',
@@ -13,25 +11,27 @@ app.get('/Releases/*', s3Proxy({
 }))
 
 io.on('connection', socket => {
-  logSocketMessage(socket, 'Connected.')
   let network = null
-  socket.on('join', (networkId, heatingOptIn) => {
+  let pseudonym = null
+
+  const log = message => console.log(`[${network} | ${pseudonym}] ${message}`)
+
+  socket.on('join', (networkId, pseudo) => {
     network = getNetwork(networkId)
+    pseudonym = pseudo
     if (network) {
       socket.join(network)
-      logSocketMessage(socket, `Joined ${network} network.`)
+      log('Connected.')
       updateNetworkUsersCount(network)
-      if (heatingOptIn) {
-        const heatingNotificationRoom = getNotificationRoom(network, HEATING)
-        socket.join(heatingNotificationRoom)
-        logSocketMessage(socket, `Opted in for notifications from ${heatingNotificationRoom}.`)
-      }
     } else {
-      logSocketMessage(socket, `No network found for network ID '${networkId}'.`)
+      log(`No network found for network ID '${networkId}'.`)
     }
   })
+
+  socket.on('track', log)
+
   socket.on('disconnect', () => {
-    logSocketMessage(socket, 'Disconnected.')
+    log('Disconnected.')
     if (network) {
       updateNetworkUsersCount(network)
     }
@@ -46,19 +46,11 @@ function getNetwork (networkId) {
   return NETWORK_MAP[networkId]
 }
 
-function getNotificationRoom (network, notificationType) {
-  return `${network}_${notificationType}`
-}
-
 function updateNetworkUsersCount (network) {
   const roomUsers = io.sockets.adapter.rooms[network]
   const count = roomUsers ? roomUsers.length : 0
   console.log(`Currently ${count} user(s) on ${network} network.`)
   io.sockets.in(network).emit('network-count-change', count)
-}
-
-function logSocketMessage (socket, message) {
-  console.log(`[${socket.id}] ${message}`)
 }
 
 const port = process.env.PORT || 5000
