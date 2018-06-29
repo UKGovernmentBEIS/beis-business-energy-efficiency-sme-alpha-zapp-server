@@ -3,8 +3,10 @@ const app = express()
 const s3Proxy = require('s3-proxy')
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
+const bodyParser = require('body-parser')
 
 app.use(express.static('public'))
+app.use(bodyParser.json())
 
 app.get('/Releases/*', s3Proxy({
   bucket: 'beis-sme-alpha',
@@ -12,6 +14,20 @@ app.get('/Releases/*', s3Proxy({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 }))
+
+app.post('/heating/message', (req, res) => {
+  const json = req.body
+  if (!json.token || json.token !== process.env.AD_HOC_NOTIFICATION_TOKEN) {
+    res.status(403).send('Forbidden.')
+    return
+  }
+  if (!networkExists(json.network)) {
+    res.status(404).send(`Could not find network '${json.network}'.`)
+    return
+  }
+  io.sockets.in(json.network).emit('heating-notification', json.title, json.message)
+  res.send('OK.')
+})
 
 io.on('connection', socket => {
   let network = null
@@ -47,6 +63,10 @@ const NETWORK_MAP = {
 
 function getNetwork (networkId) {
   return NETWORK_MAP[networkId]
+}
+
+function networkExists (network) {
+  return Object.values(NETWORK_MAP).indexOf(network) !== -1
 }
 
 function updateNetworkUsersCount (network) {
