@@ -35,7 +35,7 @@ io.on('connection', socket => {
   let network = null
   let userPseudonym = null
 
-  const log = message => console.log(`[${network} | ${userPseudonym}] ${message}`)
+  const log = message => console.log(`[${network || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`)
 
   socket.on('join', (networkId, pseudonym) => {
     network = getNetwork(networkId)
