@@ -4,7 +4,9 @@ const s3Proxy = require('s3-proxy')
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const bodyParser = require('body-parser')
+const enforce = require('express-sslify')
 
+app.use(enforce.HTTPS({ trustProtoHeader: true }))
 app.use(express.static('public'))
 app.use(bodyParser.json())
 
