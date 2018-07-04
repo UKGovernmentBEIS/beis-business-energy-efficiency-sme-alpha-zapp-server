@@ -31,9 +31,9 @@ app.post('/heating/message', (req, res) => {
   res.send('OK.')
 })
 
-app.get('/registration/company-id', (req, res) => {
-  const json = req.body
-  const company = getCompany(json.companyId)
+app.get('/registration/:companyId', (req, res) => {
+  const { companyId } = req.params
+  const company = getCompany(companyId)
   company ? res.send(company) : res.send('Company not found')
 })
 
