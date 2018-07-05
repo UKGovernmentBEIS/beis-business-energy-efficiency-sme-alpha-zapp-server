@@ -6,7 +6,9 @@ const io = require('socket.io')(http)
 const bodyParser = require('body-parser')
 const enforce = require('express-sslify')
 
-app.use(enforce.HTTPS({ trustProtoHeader: true }))
+if (process.env.ENFORCE_HTTPS === 'yes') {
+  app.use(enforce.HTTPS({ trustProtoHeader: true }))
+}
 app.use(express.static('public'))
 app.use(bodyParser.json())
 
