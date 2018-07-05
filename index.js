@@ -35,24 +35,30 @@ io.on('connection', socket => {
   let network = null
   let userPseudonym = null
 
-  const log = message => console.log(`[${network || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`)
+  const formatMessage = message => `[${network || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`
+  const info = message => console.log(formatMessage(message))
+  const warn = message => console.warn(formatMessage(message))
+  const error = message => console.error(formatMessage(message))
 
   socket.on('join', (networkId, pseudonym) => {
     network = getNetwork(networkId)
     userPseudonym = pseudonym
     if (network) {
       socket.join(network)
-      log('Connected.')
+      info('Connected.')
       updateNetworkUsersCount(network)
     } else {
-      log(`No network found for network ID '${networkId}'.`)
+      info(`No network found for network ID '${networkId}'.`)
     }
   })
 
-  socket.on('track', log)
+  socket.on('track', info)
+  socket.on('track-info', info)
+  socket.on('track-warn', warn)
+  socket.on('track-error', error)
 
   socket.on('disconnect', () => {
-    log('Disconnected.')
+    info('Disconnected.')
     if (network) {
       updateNetworkUsersCount(network)
     }
