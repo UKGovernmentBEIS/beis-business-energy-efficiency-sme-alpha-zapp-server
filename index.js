@@ -36,7 +36,11 @@ app.post('/heating/message', (req, res) => {
 app.get('/registration/:companyId', (req, res) => {
   const { companyId } = req.params
   const company = getCompany(companyId)
-  company ? res.send(company) : res.send('Company not found')
+  if (!company) {
+    res.status(404).send('Company not found')
+    return
+  }
+  res.send(company)
 })
 
 io.on('connection', socket => {
