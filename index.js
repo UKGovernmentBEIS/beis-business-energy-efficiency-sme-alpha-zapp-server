@@ -6,7 +6,9 @@ const io = require('socket.io')(http)
 const bodyParser = require('body-parser')
 const enforce = require('express-sslify')
 
-app.use(enforce.HTTPS({ trustProtoHeader: true }))
+if (process.env.ENFORCE_HTTPS === 'yes') {
+  app.use(enforce.HTTPS({ trustProtoHeader: true }))
+}
 app.use(express.static('public'))
 app.use(bodyParser.json())
 
@@ -41,24 +43,30 @@ io.on('connection', socket => {
   let company = null
   let userPseudonym = null
 
-  const log = message => console.log(`[${company || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`)
+  const formatMessage = message => `[${company || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`
+  const info = message => console.log(formatMessage(message))
+  const warn = message => console.warn(formatMessage(message))
+  const error = message => console.error(formatMessage(message))
 
   socket.on('join', (companyId, pseudonym) => {
     company = getCompany(companyId)
     userPseudonym = pseudonym
     if (company) {
       socket.join(company)
-      log('Connected.')
+      info('Connected.')
       updateCompanyUsersCount(company)
     } else {
-      log(`No company found for company ID '${companyId}'.`)
+      info(`No company found for company ID '${companyId}'.`)
     }
   })
 
-  socket.on('track', log)
+  socket.on('track', info)
+  socket.on('track-info', info)
+  socket.on('track-warn', warn)
+  socket.on('track-error', error)
 
   socket.on('disconnect', () => {
-    log('Disconnected.')
+    info('Disconnected.')
     if (company) {
       updateCompanyUsersCount(company)
     }
