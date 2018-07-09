@@ -43,6 +43,16 @@ app.get('/registration/:companyId', (req, res) => {
   res.send(company)
 })
 
+app.get('/company/:companyId', (req, res) => {
+  const { companyId } = req.params
+  const company = getCompany(companyId)
+  if (!company) {
+    res.status(404).send('Company not found')
+    return
+  }
+  res.json({company})
+})
+
 io.on('connection', socket => {
   let company = null
   let userPseudonym = null
