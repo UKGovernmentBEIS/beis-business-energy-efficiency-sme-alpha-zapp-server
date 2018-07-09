@@ -5,6 +5,7 @@ const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const bodyParser = require('body-parser')
 const enforce = require('express-sslify')
+const request = require('request');
 
 if (process.env.ENFORCE_HTTPS === 'yes') {
   app.use(enforce.HTTPS({ trustProtoHeader: true }))
@@ -41,6 +42,18 @@ app.get('/registration/:companyId', (req, res) => {
     return
   }
   res.send(company)
+})
+
+app.get('/weather/forecast', (req, res) => {
+  const location = req.query.location;
+  request({
+    uri: 'https://api.openweathermap.org/data/2.5/forecast',
+    qs: {
+      appid: process.env.OPENWEATHERMAP_API_KEY,
+      units: 'metric',
+      q: location
+    }
+  }).pipe(res);
 })
 
 io.on('connection', socket => {
