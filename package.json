@@ -4,6 +4,7 @@
   "main": "index.js",
   "private": true,
   "dependencies": {
+    "apicache": "^1.2.3",
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
     "express-sslify": "^1.2.0",
