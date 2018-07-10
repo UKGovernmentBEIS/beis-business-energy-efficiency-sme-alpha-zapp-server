@@ -5,11 +5,11 @@ const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const bodyParser = require('body-parser')
 const enforce = require('express-sslify')
-const request = require('request');
-const apicache = require('apicache');
+const request = require('request')
+const apicache = require('apicache')
 
 // Configure caching middleware.
-const cache = apicache.options({ statusCodes: { include: [200] }}).middleware;
+const cache = apicache.options({ statusCodes: { include: [200] }}).middleware
 
 if (process.env.ENFORCE_HTTPS === 'yes') {
   app.use(enforce.HTTPS({ trustProtoHeader: true }))
@@ -49,7 +49,7 @@ app.get('/registration/:companyId', (req, res) => {
 })
 
 app.get('/weather/forecast', cache('1 hour'), (req, res) => {
-  const location = req.query.location;
+  const location = req.query.location
   request({
     uri: 'https://api.openweathermap.org/data/2.5/forecast',
     qs: {
@@ -57,7 +57,17 @@ app.get('/weather/forecast', cache('1 hour'), (req, res) => {
       units: 'metric',
       q: location
     }
-  }).pipe(res);
+  }).pipe(res)
+})
+
+app.get('/company/:companyId', (req, res) => {
+  const { companyId } = req.params
+  const company = getCompany(companyId)
+  if (!company) {
+    res.status(404).send('Company not found')
+    return
+  }
+  res.json({company})
 })
 
 io.on('connection', socket => {
