@@ -1,5 +1,5 @@
 h1 {
-    font-size: 60px;
+    font-size: 4rem;
 }
 
 p {
@@ -19,8 +19,8 @@ p + p {
 .header {
     background-color: #EF103C;
     color: white;
-    padding: 30px;
-    margin-bottom: 60px;
+    padding: 2rem;
+    margin-bottom: 3rem;
 }
 
 .header > .container {
@@ -28,7 +28,7 @@ p + p {
 }
 
 .download-button {
-    margin: 1rem 0;
+    margin: 2rem 0;
 }
 
 .footer {
@@ -36,5 +36,5 @@ p + p {
     justify-content: space-between;
     align-items: center;
     margin-top: auto;
-    margin-bottom: 20px;
+    margin-bottom: 1rem;
 }
