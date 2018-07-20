@@ -2,6 +2,7 @@ const apicache = require('apicache')
 const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser')
 const express = require('express')
+const exphbs = require('express-handlebars')
 const enforce = require('express-sslify')
 const { Client } = require('pg')
 const request = require('request')
@@ -26,8 +27,15 @@ if (process.env.ENFORCE_HTTPS === 'yes') {
   app.use(enforce.HTTPS({ trustProtoHeader: true }))
 }
 
+const hbs = exphbs.create({ defaultLayout: 'main' })
+app.engine('handlebars', hbs.engine)
+app.set('view engine', 'handlebars')
 app.use(express.static('public'))
 app.use(bodyParser.json())
+
+app.get('/', (req, res) => {
+  res.render('home')
+})
 
 app.get('/Releases/*', s3Proxy({
   bucket: 'beis-sme-alpha',
