@@ -1,16 +1,15 @@
 const apicache = require('apicache')
 const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser')
-const enforce = require('express-sslify')
-const request = require('request')
-
 const express = require('express')
-const app = express()
+const enforce = require('express-sslify')
+const { Client } = require('pg')
+const request = require('request')
 const s3Proxy = require('s3-proxy')
+
+const app = express()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
-
-const { Client } = require('pg')
 
 const cache = apicache.options({ statusCodes: { include: [200] } }).middleware
 
@@ -21,9 +20,12 @@ if (adminPassword) {
 }
 const auth = basicAuth({ users, challenge: true })
 
+const WEATHER_API_URL = 'https://api.openweathermap.org/data/2.5/forecast'
+
 if (process.env.ENFORCE_HTTPS === 'yes') {
   app.use(enforce.HTTPS({ trustProtoHeader: true }))
 }
+
 app.use(express.static('public'))
 app.use(bodyParser.json())
 
@@ -47,7 +49,7 @@ app.get('/company/:code', async (req, res) => {
 app.get('/weather/forecast', cache('1 hour'), (req, res) => {
   const location = req.query.location
   request({
-    uri: 'https://api.openweathermap.org/data/2.5/forecast',
+    uri: WEATHER_API_URL,
     qs: {
       appid: process.env.OPENWEATHERMAP_API_KEY,
       units: 'metric',
