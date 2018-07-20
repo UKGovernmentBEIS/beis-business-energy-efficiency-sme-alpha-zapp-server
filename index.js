@@ -34,28 +34,14 @@ app.get('/Releases/*', s3Proxy({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 }))
 
-app.post('/heating/message', (req, res) => {
-  const json = req.body
-  if (!json.token || json.token !== process.env.AD_HOC_NOTIFICATION_TOKEN) {
-    res.status(403).send('Forbidden.')
-    return
-  }
-  if (!companyExists(json.network)) {
-    res.status(404).send(`Could not find network '${json.network}'.`)
-    return
-  }
-  io.sockets.in(json.network).emit('heating-notification', json.title, json.message)
-  res.send('OK.')
-})
-
-app.get('/company/:companyId', (req, res) => {
-  const { companyId } = req.params
-  const company = getCompany(companyId)
+app.get('/company/:code', async (req, res) => {
+  const { code } = req.params
+  const company = await getCompany(code)
   if (!company) {
     res.status(404).send('Company not found')
     return
   }
-  res.json({ company })
+  res.json({ company: company.name })
 })
 
 app.get('/weather/forecast', cache('1 hour'), (req, res) => {
@@ -71,11 +57,7 @@ app.get('/weather/forecast', cache('1 hour'), (req, res) => {
 })
 
 app.get('/dashboard', auth, async (req, res) => {
-  const client = getDatabaseClient()
-  await client.connect()
-  const result = await client.query('SELECT * FROM company;')
-  await client.end()
-  res.json(result.rows)
+  res.send('Dashboard.')
 })
 
 io.on('connection', socket => {
@@ -87,8 +69,8 @@ io.on('connection', socket => {
   const warn = message => console.warn(formatMessage(message))
   const error = message => console.error(formatMessage(message))
 
-  socket.on('join', (companyCode, pseudonym) => {
-    company = getCompany(companyCode)
+  socket.on('join', async (companyCode, pseudonym) => {
+    company = await getCompany(companyCode)
     userPseudonym = pseudonym
     if (company) {
       socket.join(company)
@@ -111,22 +93,25 @@ io.on('connection', socket => {
   })
 })
 
-const COMPANY_MAP = {
+async function getCompany (code) {
+  const result = await query('SELECT * FROM company WHERE code = $1;', [code])
+  const company = result.rows[0]
+  return company || null
 }
 
-function getDatabaseClient () {
+async function query (queryTextOrConfig, values) {
+  const client = getPgClient()
+  await client.connect()
+  const result = await client.query(queryTextOrConfig, values)
+  await client.end()
+  return result
+}
+
+function getPgClient () {
   return new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.PG_USE_SSL === 'yes'
   })
-}
-
-function getCompany (code) {
-  return COMPANY_MAP[code]
-}
-
-function companyExists (company) {
-  return Object.values(COMPANY_MAP).indexOf(company) !== -1
 }
 
 function updateCompanyUsersCount (company) {
