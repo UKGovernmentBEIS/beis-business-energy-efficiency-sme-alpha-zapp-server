@@ -23,7 +23,7 @@ app.post('/heating/message', (req, res) => {
     res.status(403).send('Forbidden.')
     return
   }
-  if (!networkExists(json.network)) {
+  if (!companyExists(json.network)) {
     res.status(404).send(`Could not find network '${json.network}'.`)
     return
   }
@@ -31,21 +31,27 @@ app.post('/heating/message', (req, res) => {
   res.send('OK.')
 })
 
+app.get('/registration/company-id', (req, res) => {
+  const json = req.body
+  const company = getCompany(json.companyId)
+  company ? res.send(company) : res.send('Company not found')
+})
+
 io.on('connection', socket => {
-  let network = null
+  let company = null
   let userPseudonym = null
 
-  const log = message => console.log(`[${network || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`)
+  const log = message => console.log(`[${company || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`)
 
-  socket.on('join', (networkId, pseudonym) => {
-    network = getNetwork(networkId)
+  socket.on('join', (companyId, pseudonym) => {
+    company = getCompany(companyId)
     userPseudonym = pseudonym
-    if (network) {
-      socket.join(network)
+    if (company) {
+      socket.join(company)
       log('Connected.')
-      updateNetworkUsersCount(network)
+      updateCompanyUsersCount(company)
     } else {
-      log(`No network found for network ID '${networkId}'.`)
+      log(`No company found for company ID '${companyId}'.`)
     }
   })
 
@@ -53,29 +59,28 @@ io.on('connection', socket => {
 
   socket.on('disconnect', () => {
     log('Disconnected.')
-    if (network) {
-      updateNetworkUsersCount(network)
+    if (company) {
+      updateCompanyUsersCount(company)
     }
   })
 })
 
-const NETWORK_MAP = {
-  'zoo.lan': 'Softwire'
+const COMPANY_MAP = {
 }
 
-function getNetwork (networkId) {
-  return NETWORK_MAP[networkId]
+function getCompany (companyId) {
+  return COMPANY_MAP[companyId]
 }
 
-function networkExists (network) {
-  return Object.values(NETWORK_MAP).indexOf(network) !== -1
+function companyExists (company) {
+  return Object.values(COMPANY_MAP).indexOf(company) !== -1
 }
 
-function updateNetworkUsersCount (network) {
-  const roomUsers = io.sockets.adapter.rooms[network]
+function updateCompanyUsersCount (company) {
+  const roomUsers = io.sockets.adapter.rooms[company]
   const count = roomUsers ? roomUsers.length : 0
-  console.log(`Currently ${count} user(s) on ${network} network.`)
-  io.sockets.in(network).emit('network-count-change', count)
+  console.log(`Currently ${count} user(s) on ${company} network.`)
+  io.sockets.in(company).emit('company-count-change', count)
 }
 
 const port = process.env.PORT || 5000
