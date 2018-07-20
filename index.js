@@ -46,16 +46,6 @@ app.post('/heating/message', (req, res) => {
   res.send('OK.')
 })
 
-app.get('/registration/:companyId', (req, res) => {
-  const { companyId } = req.params
-  const company = getCompany(companyId)
-  if (!company) {
-    res.status(404).send('Company not found')
-    return
-  }
-  res.send(company)
-})
-
 app.get('/company/:companyId', (req, res) => {
   const { companyId } = req.params
   const company = getCompany(companyId)
@@ -103,7 +93,6 @@ io.on('connection', socket => {
     }
   })
 
-  socket.on('track', info)
   socket.on('track-info', info)
   socket.on('track-warn', warn)
   socket.on('track-error', error)
