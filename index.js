@@ -6,7 +6,6 @@ const exphbs = require('express-handlebars')
 const enforce = require('express-sslify')
 const { Client } = require('pg')
 const request = require('request')
-const s3Proxy = require('s3-proxy')
 
 const app = express()
 const http = require('http').Server(app)
@@ -36,13 +35,6 @@ app.use(bodyParser.json())
 app.get('/', (req, res) => {
   res.render('home')
 })
-
-app.get('/Releases/*', s3Proxy({
-  bucket: 'beis-sme-alpha',
-  region: 'eu-west-2',
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-}))
 
 app.get('/company/:code', async (req, res) => {
   const { code } = req.params
