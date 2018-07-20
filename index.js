@@ -7,9 +7,17 @@ const bodyParser = require('body-parser')
 const enforce = require('express-sslify')
 const request = require('request')
 const apicache = require('apicache')
+const basicAuth = require('express-basic-auth')
 
 // Configure caching middleware.
 const cache = apicache.options({ statusCodes: { include: [200] }}).middleware
+
+const users = {}
+const adminPassword = process.env.ADMIN_PASSWORD
+if (adminPassword) {
+  users['admin'] = adminPassword
+}
+const auth = basicAuth({ users, challenge: true })
 
 if (process.env.ENFORCE_HTTPS === 'yes') {
   app.use(enforce.HTTPS({ trustProtoHeader: true }))
@@ -67,7 +75,11 @@ app.get('/company/:companyId', (req, res) => {
     res.status(404).send('Company not found')
     return
   }
-  res.json({company})
+  res.json({ company })
+})
+
+app.get('/dashboard', auth, (req, res) => {
+  res.send('Dashboard.')
 })
 
 io.on('connection', socket => {
