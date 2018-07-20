@@ -10,6 +10,8 @@ const s3Proxy = require('s3-proxy')
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 
+const { Client } = require('pg')
+
 const cache = apicache.options({ statusCodes: { include: [200] } }).middleware
 
 const users = {}
@@ -68,8 +70,12 @@ app.get('/weather/forecast', cache('1 hour'), (req, res) => {
   }).pipe(res)
 })
 
-app.get('/dashboard', auth, (req, res) => {
-  res.send('Dashboard.')
+app.get('/dashboard', auth, async (req, res) => {
+  const client = getDatabaseClient()
+  await client.connect()
+  const result = await client.query('SELECT * FROM company;')
+  await client.end()
+  res.json(result.rows)
 })
 
 io.on('connection', socket => {
@@ -81,15 +87,15 @@ io.on('connection', socket => {
   const warn = message => console.warn(formatMessage(message))
   const error = message => console.error(formatMessage(message))
 
-  socket.on('join', (companyId, pseudonym) => {
-    company = getCompany(companyId)
+  socket.on('join', (companyCode, pseudonym) => {
+    company = getCompany(companyCode)
     userPseudonym = pseudonym
     if (company) {
       socket.join(company)
       info('Connected.')
       updateCompanyUsersCount(company)
     } else {
-      info(`No company found for company ID '${companyId}'.`)
+      info(`No company found for company code '${companyCode}'.`)
     }
   })
 
@@ -108,8 +114,15 @@ io.on('connection', socket => {
 const COMPANY_MAP = {
 }
 
-function getCompany (companyId) {
-  return COMPANY_MAP[companyId]
+function getDatabaseClient () {
+  return new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.PG_USE_SSL === 'yes'
+  })
+}
+
+function getCompany (code) {
+  return COMPANY_MAP[code]
 }
 
 function companyExists (company) {

@@ -9,11 +9,14 @@
     "express": "^4.16.3",
     "express-basic-auth": "^1.1.5",
     "express-sslify": "^1.2.0",
+    "node-pg-migrate": "^3.8.0",
+    "pg": "^7.4.3",
     "request": "^2.87.0",
     "s3-proxy": "^1.1.1",
     "socket.io": "^2.1.1"
   },
   "scripts": {
+    "migrate": "node-pg-migrate",
     "start": "nodemon --exec \"heroku local debug\" -e js"
   },
   "devDependencies": {
