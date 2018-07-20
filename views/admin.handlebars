@@ -1,0 +1,31 @@
+<h2>Companies</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Company</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each companies}}
+      <tr>
+        <td>{{code}}</td>
+        <td><a href="/admin/company/{{code}}">{{name}}</a></td>
+        <td>
+          <form action="/admin/company/{{code}}/delete" method="POST"
+            onsubmit="return confirm('Are you sure you want to delete \'{{name}}\'?')">
+            <button class="btn btn-danger" type="submit"><i class="fas fa-trash-alt"></i> Delete</button>
+          </form>
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>
+<h3>Add new company</h3>
+<form class="form-inline" action="/admin/company/new" method="POST">
+  <input class="form-control" name="code" placeholder="Code" />
+  <input class="form-control" name="name" placeholder="Name" />
+  <button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i> Add</button>
+</form>
+

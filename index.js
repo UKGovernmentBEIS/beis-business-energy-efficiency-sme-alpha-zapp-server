@@ -29,11 +29,41 @@ if (process.env.ENFORCE_HTTPS === 'yes') {
 const hbs = exphbs.create({ defaultLayout: 'main' })
 app.engine('handlebars', hbs.engine)
 app.set('view engine', 'handlebars')
+
 app.use(express.static('public'))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: true }))
 
 app.get('/', (req, res) => {
   res.render('home')
+})
+
+app.get('/admin', auth, async (req, res) => {
+  const result = await query('SELECT * FROM company;')
+  res.render('admin', { companies: result.rows })
+})
+
+app.get('/admin/company/:code', async (req, res) => {
+  const { code } = req.params
+  const name = await getCompanyName(code)
+  res.render('company', { name })
+})
+
+app.post('/admin/company/:code/delete', auth, async (req, res) => {
+  const { code } = req.params
+  await query('DELETE FROM company WHERE code = $1', [code])
+  res.redirect('/admin')
+})
+
+app.post('/admin/company/new', auth, async (req, res) => {
+  const { code, name } = req.body
+  if (code && name) {
+    try {
+      await query('INSERT INTO company (code, name) VALUES ($1, $2);', [code, name])
+    } catch (err) {
+      console.warn(err)
+    }
+  }
+  res.redirect('/admin')
 })
 
 app.get('/company/:code', async (req, res) => {
@@ -56,10 +86,6 @@ app.get('/weather/forecast', cache('1 hour'), (req, res) => {
       q: location
     }
   }).pipe(res)
-})
-
-app.get('/dashboard', auth, async (req, res) => {
-  res.send('Dashboard.')
 })
 
 io.on('connection', socket => {
