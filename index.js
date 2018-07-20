@@ -38,12 +38,12 @@ app.get('/Releases/*', s3Proxy({
 
 app.get('/company/:code', async (req, res) => {
   const { code } = req.params
-  const company = await getCompany(code)
+  const company = await getCompanyName(code)
   if (!company) {
     res.status(404).send('Company not found')
     return
   }
-  res.json({ company: company.name })
+  res.json({ company })
 })
 
 app.get('/weather/forecast', cache('1 hour'), (req, res) => {
@@ -72,7 +72,7 @@ io.on('connection', socket => {
   const error = message => console.error(formatMessage(message))
 
   socket.on('join', async (companyCode, pseudonym) => {
-    company = await getCompany(companyCode)
+    company = await getCompanyName(companyCode)
     userPseudonym = pseudonym
     if (company) {
       socket.join(company)
@@ -95,10 +95,10 @@ io.on('connection', socket => {
   })
 })
 
-async function getCompany (code) {
-  const result = await query('SELECT * FROM company WHERE code = $1;', [code])
+async function getCompanyName (code) {
+  const result = await query('SELECT name FROM company WHERE code = $1;', [code])
   const company = result.rows[0]
-  return company || null
+  return company ? company.name : null
 }
 
 async function query (queryTextOrConfig, values) {
