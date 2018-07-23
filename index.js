@@ -79,7 +79,7 @@ app.get('/company/:code', async (req, res) => {
     res.status(404).send('Company not found')
     return
   }
-  res.json({ company })
+  res.json({ company: company.name })
 })
 
 app.get('/weather/forecast', cache('1 hour'), (req, res) => {
@@ -98,7 +98,7 @@ io.on('connection', socket => {
   let company = null
   let userPseudonym = null
 
-  const formatMessage = message => `[${company.name || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`
+  const formatMessage = message => `[${company ? company.name : 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`
   const info = message => console.log(formatMessage(message))
   const warn = message => console.warn(formatMessage(message))
   const error = message => console.error(formatMessage(message))
