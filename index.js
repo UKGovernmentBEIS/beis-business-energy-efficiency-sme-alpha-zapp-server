@@ -1,8 +1,10 @@
 const apicache = require('apicache')
-const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser')
 const express = require('express')
+const basicAuth = require('express-basic-auth')
+const flash = require('express-flash')
 const exphbs = require('express-handlebars')
+const session = require('express-session')
 const enforce = require('express-sslify')
 const { Client } = require('pg')
 const request = require('request')
@@ -32,6 +34,8 @@ app.set('view engine', 'handlebars')
 
 app.use(express.static('public'))
 app.use(bodyParser.urlencoded({ extended: true }))
+app.use(session({ secret: process.env.SESSION_SECRET, cookie: { maxAge: 60000 } }))
+app.use(flash())
 
 app.get('/', (req, res) => {
   res.render('home')
@@ -39,7 +43,8 @@ app.get('/', (req, res) => {
 
 app.get('/admin', auth, async (req, res) => {
   const result = await query('SELECT * FROM company;')
-  res.render('admin', { companies: result.rows })
+  const messages = req.flash()
+  res.render('admin', { companies: result.rows, error: messages.error })
 })
 
 app.get('/admin/company/:code', async (req, res) => {
@@ -61,6 +66,7 @@ app.post('/admin/company/new', auth, async (req, res) => {
       await query('INSERT INTO company (code, name) VALUES ($1, $2);', [code, name])
     } catch (err) {
       console.warn(err)
+      req.flash('error', `Could not add company '${name}' with code '${code}'. Please ensure that both the name and code are unique.`)
     }
   }
   res.redirect('/admin')
@@ -138,7 +144,7 @@ async function query (queryTextOrConfig, values) {
 function getPgClient () {
   return new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.PG_USE_SSL === 'yes'
+    ssl: process.env.POSTGRES_USE_SSL === 'yes'
   })
 }
 

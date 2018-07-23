@@ -23,6 +23,9 @@
   </tbody>
 </table>
 <h3>Add new company</h3>
+{{#each error}}
+  <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{this}}</div>
+{{/each}}
 <form class="form-inline" action="/admin/company/new" method="POST">
   <input class="form-control" name="code" placeholder="Code" />
   <input class="form-control" name="name" placeholder="Name" />
