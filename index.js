@@ -49,8 +49,8 @@ app.get('/admin', auth, async (req, res) => {
 
 app.get('/admin/company/:code', async (req, res) => {
   const { code } = req.params
-  const name = await getCompanyName(code)
-  res.render('company', { name })
+  const company = await getCompany(code)
+  res.render('company', { name: company.name })
 })
 
 app.post('/admin/company/:code/delete', auth, async (req, res) => {
@@ -74,7 +74,7 @@ app.post('/admin/company/new', auth, async (req, res) => {
 
 app.get('/company/:code', async (req, res) => {
   const { code } = req.params
-  const company = await getCompanyName(code)
+  const company = await getCompany(code)
   if (!company) {
     res.status(404).send('Company not found')
     return
@@ -98,24 +98,37 @@ io.on('connection', socket => {
   let company = null
   let userPseudonym = null
 
-  const formatMessage = message => `[${company || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`
+  const formatMessage = message => `[${company.name || 'Unknown'} | ${userPseudonym || 'Anonymous'}] ${message}`
   const info = message => console.log(formatMessage(message))
   const warn = message => console.warn(formatMessage(message))
   const error = message => console.error(formatMessage(message))
 
   socket.on('join', async (companyCode, pseudonym) => {
-    company = await getCompanyName(companyCode)
+    company = await getCompany(companyCode)
     userPseudonym = pseudonym
     if (company) {
-      socket.join(company)
+      socket.join(company.name)
       info('Connected.')
-      updateCompanyUsersCount(company)
+      updateCompanyUsersCount(company.name)
     } else {
       info(`No company found for company code '${companyCode}'.`)
     }
   })
 
-  socket.on('track-info', info)
+  socket.on('track-info', async (message, action) => {
+    console.log(formatMessage(message))
+    const actionId = await getActionId(action)
+
+    if (company.id && userPseudonym && actionId) {
+      try {
+        await query(`INSERT INTO action_log(company_id, pseudonym, action_id)
+        VALUES ($1, $2, $3);`, [company.id, userPseudonym, actionId])
+      } catch (err) {
+        console.warn(err)
+      }
+    }
+  })
+
   socket.on('track-warn', warn)
   socket.on('track-error', error)
 
@@ -127,10 +140,15 @@ io.on('connection', socket => {
   })
 })
 
-async function getCompanyName (code) {
-  const result = await query('SELECT name FROM company WHERE code = $1;', [code])
-  const company = result.rows[0]
-  return company ? company.name : null
+async function getCompany (code) {
+  const result = await query('SELECT * FROM company WHERE code = $1;', [code])
+  return result.rows[0]
+}
+
+async function getActionId (code) {
+  const result = await query('SELECT id FROM action WHERE code = $1;', [code])
+  const row = result.rows[0]
+  return row ? row.id : null
 }
 
 async function query (queryTextOrConfig, values) {
