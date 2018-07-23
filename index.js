@@ -34,7 +34,12 @@ app.set('view engine', 'handlebars')
 
 app.use(express.static('public'))
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(session({ secret: process.env.SESSION_SECRET, cookie: { maxAge: 60000 } }))
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  cookie: { maxAge: 60000 },
+  resave: true,
+  saveUninitialized: true
+}))
 app.use(flash())
 
 app.get('/', (req, res) => {
