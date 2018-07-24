@@ -93,6 +93,12 @@ app.get('/admin/download/Zapp_usage_data.csv', auth, async (req, res) => {
   res.csv(sqlData.rows, true)
 })
 
+app.get('/admin/download/:companyName/Zapp_usage_data.csv', auth, async (req, res) => {
+  const { companyName } = req.params
+  const sqlData = await getCompanyDataForDownload(companyName)
+  res.csv(sqlData.rows, true)
+})
+
 app.get('/weather/forecast', cache('1 hour'), (req, res) => {
   const location = req.query.location
   request({
@@ -163,8 +169,7 @@ async function getActionId (code) {
 }
 
 async function getAllDataForDownload (code) {
-  return query(`
-  SELECT 
+  return query(`SELECT 
     to_char(timestamp::date,'DD/MM/YYYY') AS date,  
     timestamp::time(0) AS time,  
     company.name AS company, 
@@ -174,6 +179,21 @@ async function getAllDataForDownload (code) {
   FROM action_log
   INNER JOIN company ON action_log.company_id=company.id
   INNER JOIN action ON action_log.action_id = action.id;`)
+}
+
+async function getCompanyDataForDownload (companyName) {
+  return query(`SELECT 
+    to_char(timestamp::date,'DD/MM/YYYY') AS date,  
+    timestamp::time(0) AS time,  
+    company.name AS company, 
+    pseudonym, 
+    action.code, 
+    action.description
+  FROM action_log
+  INNER JOIN company ON action_log.company_id=company.id
+  INNER JOIN action ON action_log.action_id = action.id
+  WHERE company.name ILIKE '${companyName}';`
+  )
 }
 
 async function query (queryTextOrConfig, values) {

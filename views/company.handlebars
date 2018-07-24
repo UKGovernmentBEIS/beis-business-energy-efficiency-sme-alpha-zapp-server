@@ -1,1 +1,7 @@
 <h1>Stats for {{name}}</h1>
+<div class="download" style="margin-top: 50px">
+  <h3>Download Zapp usage data for {{name}}</h3>
+  <form action="/admin/download/{{name}}/Zapp_usage_data.csv" method="GET">
+      <button class="btn btn-primary" type="submit"><i class="fas fa-download"></i> Download</button>
+  </form>
+</div>
