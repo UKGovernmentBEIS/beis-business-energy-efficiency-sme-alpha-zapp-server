@@ -56,7 +56,8 @@ app.get('/admin', auth, async (req, res) => {
 app.get('/admin/company/:code', async (req, res) => {
   const { code } = req.params
   const company = await getCompany(code)
-  res.render('company', { name: company.name })
+  const zappData = await generateCompanyData(company.name)
+  res.render('company', { name: company.name, data: zappData })
 })
 
 app.post('/admin/company/:code/delete', auth, async (req, res) => {
@@ -177,7 +178,7 @@ async function getAllDataForDownload (code) {
     action.code, 
     action.description
   FROM action_log
-  INNER JOIN company ON action_log.company_id=company.id
+  INNER JOIN company ON action_log.company_id = company.id
   INNER JOIN action ON action_log.action_id = action.id;`)
 }
 
@@ -190,10 +191,27 @@ async function getCompanyDataForDownload (companyName) {
     action.code, 
     action.description
   FROM action_log
-  INNER JOIN company ON action_log.company_id=company.id
+  INNER JOIN company ON action_log.company_id = company.id
   INNER JOIN action ON action_log.action_id = action.id
-  WHERE company.name ILIKE '${companyName}';`
-  )
+  WHERE company.name ILIKE $1;`, [companyName])
+}
+
+async function generateCompanyData (companyName) {
+  const zappHibernations = await getNumbersForAction(companyName, 'ZappHibernation')
+  return {
+    zappHibernations
+  }
+}
+
+async function getNumbersForAction (companyName, action) {
+  const data = await query(`SELECT 
+  company.name, action.code
+  FROM action_log
+  INNER JOIN company ON action_log.company_id = company.id
+  INNER JOIN action ON action_log.action_id = action.id
+  WHERE company.name ILIKE $1
+  AND action.code ILIKE $2;`, [companyName, action])
+  return data.rowCount
 }
 
 async function query (queryTextOrConfig, values) {
