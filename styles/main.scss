@@ -22,8 +22,13 @@ p {
   color: white;
   padding: 2rem;
   margin-bottom: 3rem;
-  > .container {
-    display: flex;
+  > .container > a {
+    display: inline-flex;
+    color: inherit;
+    &:hover, &:focus, &:active {
+      color: inherit;
+      text-decoration: none;
+    }
   }
 }
 
