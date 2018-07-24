@@ -1,5 +1,6 @@
 const apicache = require('apicache')
 const bodyParser = require('body-parser')
+const csv = require('csv-express')
 const express = require('express')
 const basicAuth = require('express-basic-auth')
 const flash = require('express-flash')
@@ -87,6 +88,11 @@ app.get('/company/:code', async (req, res) => {
   res.json({ company: company.name })
 })
 
+app.get('/admin/download/Zapp_usage_data.csv', auth, async (req, res) => {
+  const sqlData = await getAllDataForDownload()
+  res.csv(sqlData.rows, true)
+})
+
 app.get('/weather/forecast', cache('1 hour'), (req, res) => {
   const location = req.query.location
   request({
@@ -154,6 +160,20 @@ async function getActionId (code) {
   const result = await query('SELECT id FROM action WHERE code = $1;', [code])
   const row = result.rows[0]
   return row ? row.id : null
+}
+
+async function getAllDataForDownload (code) {
+  return query(`
+  SELECT 
+    to_char(timestamp::date,'DD/MM/YYYY') AS date,  
+    timestamp::time(0) AS time,  
+    company.name AS company, 
+    pseudonym, 
+    action.code, 
+    action.description
+  FROM action_log
+  INNER JOIN company ON action_log.company_id=company.id
+  INNER JOIN action ON action_log.action_id = action.id;`)
 }
 
 async function query (queryTextOrConfig, values) {
