@@ -57,7 +57,8 @@ app.get('/admin/company/:code', async (req, res) => {
   const { code } = req.params
   const company = await getCompany(code)
   const zappData = await generateCompanyData(company.name)
-  res.render('company', { name: company.name, data: zappData })
+  const hibernationOptInData = await getHibernationOptInData(company.name)
+  res.render('company', { name: company.name, data: zappData, hibernationOptInData })
 })
 
 app.post('/admin/company/:code/delete', auth, async (req, res) => {
@@ -198,8 +199,12 @@ async function getCompanyDataForDownload (companyName) {
 
 async function generateCompanyData (companyName) {
   const zappHibernations = await getNumbersForAction(companyName, 'ZappHibernation')
+  const optInHibernations = await getHibernationOptInData(companyName)
+  const optInHeating = await getHeatingOptInData(companyName)
   return {
-    zappHibernations
+    zappHibernations,
+    optInHibernations,
+    optInHeating
   }
 }
 
@@ -212,6 +217,46 @@ async function getNumbersForAction (companyName, action) {
   WHERE company.name ILIKE $1
   AND action.code ILIKE $2;`, [companyName, action])
   return data.rowCount
+}
+
+async function getHibernationOptInData (companyName) {
+  const data = await query(`SELECT 
+  pseudonym, action.code = 'OptInToHibernate' AS optedin
+  FROM action_log
+  INNER JOIN company ON action_log.company_id = company.id
+  INNER JOIN action ON action_log.action_id = action.id
+  WHERE 
+  company.name ILIKE $1
+  AND action_log.id IN (
+    SELECT MAX(action_log.id) FROM action_log
+    INNER JOIN action ON action_log.action_id = action.id
+    WHERE (action.code ILIKE 'OptOutOfHibernate' OR action.code ILIKE 'OptInToHibernate')
+    GROUP BY pseudonym
+  );`, [companyName])
+  return {
+    optedIn: data.rows.filter(row => row.optedin === true).length,
+    total: data.rowCount
+  }
+}
+
+async function getHeatingOptInData (companyName) {
+  const data = await query(`SELECT 
+  pseudonym, action.code = 'OptInToHeating' AS optedin
+  FROM action_log
+  INNER JOIN company ON action_log.company_id = company.id
+  INNER JOIN action ON action_log.action_id = action.id
+  WHERE 
+  company.name ILIKE $1
+  AND action_log.id IN (
+    SELECT MAX(action_log.id) FROM action_log
+    INNER JOIN action ON action_log.action_id = action.id
+    WHERE (action.code ILIKE 'OptOutOfHeating' OR action.code ILIKE 'OptInToHeating')
+    GROUP BY pseudonym
+  );`, [companyName])
+  return {
+    optedIn: data.rows.filter(row => row.optedin === true).length,
+    total: data.rowCount
+  }
 }
 
 async function query (queryTextOrConfig, values) {
