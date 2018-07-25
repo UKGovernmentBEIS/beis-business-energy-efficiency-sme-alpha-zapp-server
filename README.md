@@ -23,10 +23,10 @@ The server uses PostgreSQL for its database. These steps describe installing a l
 * Install PostgreSQL from: https://www.postgresql.org/download/
   * Choose the lateset version of PostgreSQL (v10.4 at time of writing).
   * When prompted about components to install, you should select:
-    * **PostgreSQL Server** ✔
-    * **pgAdmin 4** ✔
-    * **Command Line Tools** ✔
-  * You do not need **Stack Builder** ✘
+    * **PostgreSQL Server**
+    * **pgAdmin 4**
+    * **Command Line Tools**
+  * You do not need **Stack Builder**
   * Take note of the password that you set for the `postgres` user, you will need it later to get your database URL for the `.env` file.
   * [Suggested] Leave the port as the default `5432`.
 * Add the PostgreSQL `/bin` folder to your `PATH` environment variable.
@@ -65,7 +65,7 @@ git clone git@github.com:UKGovernmentBEIS/beis-business-energy-efficiency-sme-al
 cd beis-business-energy-efficiency-sme-alpha-zapp-server/
 yarn
 ```
-* Create a file named `.env` at the root of the project to store your API credentials (your username and API key from step 2) and other configuration. The contents of the file should look like:
+* Create a file named `.env` at the root of the project to store your API key, database URL and other configuration. The contents of the file should look like:
 ```
 # The password used to access /admin endpoint with username 'admin'.
 # Can be anything, but not empty.
@@ -117,4 +117,6 @@ This will allow you to set breakpoints, etc.
 
 ### 5. Deployment
 
-The app is currently deployed to Heroku, contact Jamie Humphries (jamie.humphries@softwire.com) to be added to the Heroku team.
+The app is currently deployed to Heroku. Contact Jamie Humphries (jamie.humphries@softwire.com) to be added to the `softwire-beis-sme-alpha` Heroku team.
+
+The client releases are built separately (see [Zapp Client repository](https://github.com/UKGovernmentBEIS/beis-business-energy-efficiency-sme-alpha-zapp-client)) and checked in to this repository at `/public/Releases`. Once this project is deployed to the web with an updated client build, clients will update automatically.
