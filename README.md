@@ -26,7 +26,7 @@ The server uses PostgreSQL for its database. These steps describe installing a l
     * **PostgreSQL Server**
     * **pgAdmin 4**
     * **Command Line Tools**
-  * You do not need **Stack Builder**
+  * You do not need **Stack Builder**.
   * Take note of the password that you set for the `postgres` user, you will need it later to get your database URL for the `.env` file.
   * [Suggested] Leave the port as the default `5432`.
 * Add the PostgreSQL `/bin` folder to your `PATH` environment variable.
@@ -108,9 +108,9 @@ You can also install the [LiveReload browser extension](http://livereload.com/ex
 
 #### Debugging
 
-With the site running via `yarn start`, you can debug the Node process by using the **Attach** configuration, either:
+With the site running via `yarn start`, you can debug the Node process in Visual Studio Code by using the **Attach** configuration, either:
 
-* Press F5 with VS Code open; or
+* Press **F5**; or
 * Open the debug tab and click the green play button
 
 This will allow you to set breakpoints, etc.
