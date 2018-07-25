@@ -170,18 +170,18 @@ io.on('connection', socket => {
   })
 })
 
-async function getCompany (code) {
+async function getCompany(code) {
   const result = await query('SELECT * FROM company WHERE code = $1;', [code])
   return result.rows[0]
 }
 
-async function getActionId (code) {
+async function getActionId(code) {
   const result = await query('SELECT id FROM action WHERE code = $1;', [code])
   const row = result.rows[0]
   return row ? row.id : null
 }
 
-async function getAllDataForDownload (code) {
+async function getAllDataForDownload(code) {
   return query(`SELECT 
     to_char(timestamp::date,'DD/MM/YYYY') AS date,  
     timestamp::time(0) AS time,  
@@ -194,7 +194,7 @@ async function getAllDataForDownload (code) {
   INNER JOIN action ON action_log.action_id = action.id;`)
 }
 
-async function getCompanyDataForDownload (companyName) {
+async function getCompanyDataForDownload(companyName) {
   return query(`SELECT 
     to_char(timestamp::date,'DD/MM/YYYY') AS date,  
     timestamp::time(0) AS time,  
@@ -208,18 +208,22 @@ async function getCompanyDataForDownload (companyName) {
   WHERE company.name ILIKE $1;`, [companyName])
 }
 
-async function generateCompanyData (companyName) {
+async function generateCompanyData(companyName) {
+  const zappInstallations = await getNumbersForAction(companyName, 'InstalledZapp')
   const zappHibernations = await getNumbersForAction(companyName, 'ZappHibernation')
+  const heatingClickedDone = await getNumbersForAction(companyName, 'HeatingFirstLoginDone')
   const optInHibernations = await getHibernationOptInData(companyName)
   const optInHeating = await getHeatingOptInData(companyName)
   return {
+    zappInstallations,
     zappHibernations,
+    heatingClickedDone,
     optInHibernations,
     optInHeating
   }
 }
 
-async function getNumbersForAction (companyName, action) {
+async function getNumbersForAction(companyName, action) {
   const data = await query(`SELECT 
   company.name, action.code
   FROM action_log
@@ -230,7 +234,7 @@ async function getNumbersForAction (companyName, action) {
   return data.rowCount
 }
 
-async function getHibernationOptInData (companyName) {
+async function getHibernationOptInData(companyName) {
   const data = await query(`SELECT 
   pseudonym, action.code = 'OptInToHibernate' AS optedin
   FROM action_log
@@ -250,7 +254,7 @@ async function getHibernationOptInData (companyName) {
   }
 }
 
-async function getHeatingOptInData (companyName) {
+async function getHeatingOptInData(companyName) {
   const data = await query(`SELECT 
   pseudonym, action.code = 'OptInToHeating' AS optedin
   FROM action_log
@@ -270,7 +274,7 @@ async function getHeatingOptInData (companyName) {
   }
 }
 
-async function query (queryTextOrConfig, values) {
+async function query(queryTextOrConfig, values) {
   const client = getPgClient()
   await client.connect()
   const result = await client.query(queryTextOrConfig, values)
@@ -278,14 +282,14 @@ async function query (queryTextOrConfig, values) {
   return result
 }
 
-function getPgClient () {
+function getPgClient() {
   return new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.POSTGRES_USE_SSL === 'yes'
   })
 }
 
-function updateCompanyUsersCount (company) {
+function updateCompanyUsersCount(company) {
   const roomUsers = io.sockets.adapter.rooms[company]
   const count = roomUsers ? roomUsers.length : 0
   console.log(`Currently ${count} user(s) on ${company} network.`)
