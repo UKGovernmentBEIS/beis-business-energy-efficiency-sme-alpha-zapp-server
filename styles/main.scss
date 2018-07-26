@@ -56,6 +56,11 @@ h3 {
   width: 50%;
 }
 
-.chart {
-  height: 100px;
+.chartContainer {
+  height: 300px;
+  margin: 60px 0;
+
+  canvas {
+    margin-top: 20px;
+  }
 }

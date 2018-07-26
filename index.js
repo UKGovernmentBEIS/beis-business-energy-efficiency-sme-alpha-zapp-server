@@ -123,17 +123,6 @@ app.get('/weather/forecast', cache('1 hour'), (req, res) => {
   }).pipe(res)
 })
 
-app.get('/chart', (req, res) => {
-  const data = [{
-    x: new Date(),
-    y: 1
-  }, {
-    t: new Date(),
-    y: 10
-  }]
-  res.render('chart', { data: JSON.stringify(data) })
-})
-
 io.on('connection', socket => {
   let company = null
   let userPseudonym = null

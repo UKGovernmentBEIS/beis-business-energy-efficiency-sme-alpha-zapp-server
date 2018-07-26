@@ -25,11 +25,11 @@
   </table>
 </div>
 
-<div class="dashboard">
-  <h3>Zapp Usage Data</h3>
-  <canvas id="myChart"></canvas>
+<div class="chartContainer">
+  <h4>Active and Inactive Users</h4>
+  <canvas id="activeUsersChart"></canvas>
   <script>
-    var ctx = document.getElementById('myChart').getContext('2d');
+    var ctx = document.getElementById('activeUsersChart').getContext('2d');
     let chart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -56,11 +56,13 @@
           xAxes: [{
                 scaleLabel: {
                     display: true,
-                    labelString: 'Days in Zapp trial'
+                    labelString: 'Weekdays in Zapp trial'
                 }
             }],
             yAxes: [{
-              
+                ticks: {
+                    stepSize: 2
+                }
             }]
         }
     }
