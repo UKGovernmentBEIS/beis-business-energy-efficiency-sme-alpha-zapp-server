@@ -1,33 +1,68 @@
 <h1>Stats for {{name}}</h1>
 <div class="companyData">
-    <h3>Zapp Data</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Metric</th>
-                <th>Value</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Opted In to Hibernations</td>
-                <td>{{data.optInHibernations.optedIn}} / {{data.optInHibernations.total}}</td>
-            </tr>
-            <tr>
-                <td>Opted In to Heating</td>
-                <td>{{data.optInHeating.optedIn}} / {{data.optInHeating.total}}</td>
-            </tr>
-            <tr>
-                <td>Zapp driven hibernations</td>
-                <td>{{data.zappHibernations}}</td>
-            </tr>
-        </tbody>
-    </table>
+  <h3>Zapp Data</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Opted In to Hibernations</td>
+        <td>{{data.optInHibernations.optedIn}} / {{data.optInHibernations.total}}</td>
+      </tr>
+      <tr>
+        <td>Opted In to Heating</td>
+        <td>{{data.optInHeating.optedIn}} / {{data.optInHeating.total}}</td>
+      </tr>
+      <tr>
+        <td>Zapp driven hibernations</td>
+        <td>{{data.zappHibernations}}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
+<div class="dashboard">
+  <h3>Zapp Usage Data</h3>
+  <canvas id="myChart"></canvas>
+  <script>
+    var ctx = document.getElementById('myChart').getContext('2d');
+    let chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: 'Daily Active Users',
+            data: {{{chartData}}},
+            borderColor: '#EF103C'
+        }],
+        labels: {{{labels}}}
+    },
+    options: {
+      maintainAspectRatio: false,
+      elements: {
+        line: {
+          tension: 0
+        }
+      },
+        scales: {
+            yAxes: [{
+                ticks: {
+                    {{!-- suggestedMax: 100 --}}
+                }
+            }]
+        }
+    }
+});
+  </script>
+</div>
+
+
 <div class="download">
-    <h3>Download Zapp usage data for {{name}}</h3>
-    <a class="download-button btn btn-primary" href="/admin/download/{{name}}/Zapp_usage_data.csv">
-        <i class="fas fa-download"></i> Download
-    </a>
+  <h3>Download Zapp usage data for {{name}}</h3>
+  <a class="download-button btn btn-primary" href="/admin/download/{{name}}/Zapp_usage_data.csv">
+    <i class="fas fa-download"></i> Download
+  </a>
 </div>
