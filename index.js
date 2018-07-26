@@ -56,18 +56,18 @@ app.get('/admin', auth, async (req, res) => {
 app.get('/admin/company/:code', async (req, res) => {
   const { code } = req.params
   const company = await getCompany(code)
-  const zappData = await generateCompanyData(company.name)
-  const hibernationOptInData = await getHibernationOptInData(company.name)
-  const chartData = [1, 3, 6, 3]
-  const chartData2 = [2, 4, 1, 3]
-  const labels = [...Array(chartData.length).keys()].map(k => `Day ${k + 1}`)
+  const cumulativeData = await generateCumulativeData(company.name)
+  // const activeUsersChartData = await getDataForActiveUsersChart(company.name)
+  const installsChartData = await getDataForInstallsChart(company.name)
+  const labels = [...Array(installsChartData.length).keys()].map(k => `Day ${k + 1}`)
   res.render('company', {
     name: company.name,
-    data: zappData,
-    hibernationOptInData,
-    chartData: JSON.stringify(chartData),
+    cumulativeData,
     labels: JSON.stringify(labels),
-    chartData2: JSON.stringify(chartData2)
+    // activeUserData: JSON.stringify(activeUsersChartData.map(d => d.installs)),
+    // inactiveUserData: JSON.stringify(activeUsersChartData.map(d => d.uninstalls)),
+    installsData: JSON.stringify(installsChartData.map(d => d.installs)),
+    uninstallsData: JSON.stringify(installsChartData.map(d => d.uninstalls))
   })
 })
 
@@ -207,18 +207,12 @@ async function getCompanyDataForDownload (companyName) {
   WHERE company.name ILIKE $1;`, [companyName])
 }
 
-async function generateCompanyData (companyName) {
-  const zappInstallations = await getNumbersForAction(companyName, 'InstalledZapp')
+async function generateCumulativeData (companyName) {
   const zappHibernations = await getNumbersForAction(companyName, 'ZappHibernation')
   const heatingClickedDone = await getNumbersForAction(companyName, 'HeatingFirstLoginDone')
-  const optInHibernations = await getHibernationOptInData(companyName)
-  const optInHeating = await getHeatingOptInData(companyName)
   return {
-    zappInstallations,
     zappHibernations,
-    heatingClickedDone,
-    optInHibernations,
-    optInHeating
+    heatingClickedDone
   }
 }
 
@@ -233,44 +227,73 @@ async function getNumbersForAction (companyName, action) {
   return data.rowCount
 }
 
-async function getHibernationOptInData (companyName) {
-  const data = await query(`SELECT 
-  pseudonym, action.code = 'OptInToHibernate' AS optedin
-  FROM action_log
-  INNER JOIN company ON action_log.company_id = company.id
-  INNER JOIN action ON action_log.action_id = action.id
-  WHERE 
-  company.name ILIKE $1
-  AND action_log.id IN (
-    SELECT MAX(action_log.id) FROM action_log
-    INNER JOIN action ON action_log.action_id = action.id
-    WHERE (action.code ILIKE 'OptOutOfHibernate' OR action.code ILIKE 'OptInToHibernate')
-    GROUP BY pseudonym
-  );`, [companyName])
-  return {
-    optedIn: data.rows.filter(row => row.optedin === true).length,
-    total: data.rowCount
-  }
+async function getDataForActiveUsersChart (companyName) {
+  // const data = await query(`SELECT 
+  // timestamp::date AS date, 
+  // COUNT(NULLIF(action_id = 7, FALSE)) AS installs, 
+  // COUNT(NULLIF(action_id = 8, FALSE)) AS uninstalls
+  // FROM action_log
+  // INNER JOIN company ON action_log.company_id = company.id
+  // WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
+  // AND company.name ILIKE $1
+  // GROUP BY (date)
+  // ORDER BY (date);`, [companyName])
+  // return data.rows
 }
 
-async function getHeatingOptInData (companyName) {
-  const data = await query(`SELECT 
-  pseudonym, action.code = 'OptInToHeating' AS optedin
-  FROM action_log
-  INNER JOIN company ON action_log.company_id = company.id
-  INNER JOIN action ON action_log.action_id = action.id
-  WHERE 
-  company.name ILIKE $1
-  AND action_log.id IN (
-    SELECT MAX(action_log.id) FROM action_log
-    INNER JOIN action ON action_log.action_id = action.id
-    WHERE (action.code ILIKE 'OptOutOfHeating' OR action.code ILIKE 'OptInToHeating')
-    GROUP BY pseudonym
-  );`, [companyName])
-  return {
-    optedIn: data.rows.filter(row => row.optedin === true).length,
-    total: data.rowCount
-  }
+async function getNumberOfTotalUsers (companyName) {
+  const data = await query(`
+  SELECT datetable.date, COUNT(installtable.pseudonym) AS totalusers FROM 
+
+(
+select i::date AS date from generate_series(
+    (
+    SELECT timestamp::date FROM action_log
+    ORDER BY timestamp ASC
+    LIMIT 1
+    ), 
+  current_date, '1 day'::interval) i
+WHERE (EXTRACT(ISODOW FROM i) < 6)
+) AS datetable 
+LEFT JOIN 
+(SELECT  a1.pseudonym,  a1."timestamp"::date AS installdate, a2."timestamp"::date AS uninstalldate
+FROM action_log AS a1
+LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id = 14
+INNER JOIN company ON a1.company_id = company.id
+WHERE a1.action_id = 13 AND company.name = 'Softwire') AS installtable
+ON installtable.installdate <= datetable.date AND (installtable.uninstalldate > datetable.date OR installtable.uninstalldate IS NULL)
+GROUP BY datetable.date
+ORDER BY datetable.date ASC;`, [companyName])
+  return data.rows
+}
+
+async function getDataForInstallsChart (companyName) {
+  const data = await query(`
+  SELECT datetable.date, COALESCE(a1.installs, 0) AS installs, COALESCE(a1.uninstalls, 0) AS uninstalls
+  FROM  
+  (
+    select i::date AS date from generate_series(
+    (
+    SELECT timestamp::date FROM action_log
+    ORDER BY timestamp ASC
+    LIMIT 1
+    ), 
+      current_date, '1 day'::interval) i
+      WHERE (EXTRACT(ISODOW FROM i) < 6)
+  ) AS datetable 
+  LEFT JOIN (
+  
+    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = 13, FALSE)) AS installs, COUNT(NULLIF(action_id = 14, FALSE)) AS uninstalls
+    FROM action_log
+    INNER JOIN company ON action_log.company_id = company.id
+    WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
+    AND company.name ILIKE $1
+    GROUP BY (date)
+    ORDER BY (date)
+  ) AS a1
+  
+  ON datetable.date = a1.date;`, [companyName])
+  return data.rows
 }
 
 async function query (queryTextOrConfig, values) {
