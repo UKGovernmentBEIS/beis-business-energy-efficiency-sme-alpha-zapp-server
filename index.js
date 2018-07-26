@@ -59,8 +59,16 @@ app.get('/admin/company/:code', async (req, res) => {
   const zappData = await generateCompanyData(company.name)
   const hibernationOptInData = await getHibernationOptInData(company.name)
   const chartData = [1, 3, 6, 3]
-  const labels = ['a', 'b', 'c', 'd']
-  res.render('company', { name: company.name, data: zappData, hibernationOptInData, chartData: JSON.stringify(chartData), labels: JSON.stringify(labels) })
+  const chartData2 = [2, 4, 1, 3]
+  const labels = [...Array(chartData.length).keys()].map(k => `Day ${k + 1}`)
+  res.render('company', {
+    name: company.name,
+    data: zappData,
+    hibernationOptInData,
+    chartData: JSON.stringify(chartData),
+    labels: JSON.stringify(labels),
+    chartData2: JSON.stringify(chartData2)
+  })
 })
 
 app.post('/admin/company/:code/delete', auth, async (req, res) => {

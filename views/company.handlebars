@@ -36,8 +36,13 @@
         datasets: [{
             label: 'Daily Active Users',
             data: {{{chartData}}},
-            borderColor: '#EF103C'
-        }],
+            borderColor: '#EF103C',
+            fill: false
+        }, {label: 'Daily Inactive Users',
+            data: {{{chartData2}}},
+            borderColor: '#3A2E39',
+            fill: false}
+        ],
         labels: {{{labels}}}
     },
     options: {
@@ -48,10 +53,14 @@
         }
       },
         scales: {
-            yAxes: [{
-                ticks: {
-                    {{!-- suggestedMax: 100 --}}
+          xAxes: [{
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Days in Zapp trial'
                 }
+            }],
+            yAxes: [{
+              
             }]
         }
     }
