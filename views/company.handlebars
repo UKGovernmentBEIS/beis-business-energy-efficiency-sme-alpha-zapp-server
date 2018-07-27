@@ -111,6 +111,50 @@
 });
   </script>
 </div>
+<div class="chartContainer">
+  <h4>Heating Notification Responses</h4>
+  <canvas id="heatingNotificationChart"></canvas>
+  <script>
+    var ctx = document.getElementById('heatingNotificationChart').getContext('2d');
+    let heatingNotificationChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: '% of Heating Actions Taken When Heating Notification Shown',
+            data: {{{heatingNotificationData}}},
+            borderColor: '#EF103C',
+            fill: false
+        }
+        ],
+        labels: {{{labels}}}
+    },
+    options: {
+      maintainAspectRatio: false,
+      elements: {
+        line: {
+          tension: 0
+        }
+      },
+        scales: {
+          xAxes: [{
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Weekdays in Zapp trial'
+                }
+            }],
+            yAxes: [{
+                ticks: {
+                    stepSize: 10,
+                    suggestedMax: 100
+                }
+ 
+            }]
+        }
+    }
+});
+  </script>
+</div>
+
 
 <div class="download">
   <h3>Download Zapp usage data for {{name}}</h3>

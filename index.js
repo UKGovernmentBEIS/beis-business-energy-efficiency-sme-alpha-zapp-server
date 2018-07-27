@@ -60,10 +60,8 @@ app.get('/admin/company/:code', async (req, res) => {
   const activeUsersData = await getDataForActiveUsers(company.name)
   const totalUsersData = await getDataForTotalUsers(company.name)
   const installsChartData = await getDataForInstallsChart(company.name)
-  const labels = [...Array(installsChartData.length).keys()].map(k => `Day ${k + 1}`)
-  console.log(activeUsersData.map(d => d.activeusers))
-  console.log(totalUsersData.map(d => d.totalusers))
-  console.log(installsChartData.map(d => d.installs))
+  const heatingNotificationData = await getDataForHeatingNotifications(company.name)
+  const labels = [...Array(installsChartData.length).keys()].map(k => `${k + 1}`)
   res.render('company', {
     name: company.name,
     cumulativeData,
@@ -71,7 +69,8 @@ app.get('/admin/company/:code', async (req, res) => {
     activeUsersDate: JSON.stringify(activeUsersData.map(d => d.activeusers)),
     totalUsersData: JSON.stringify(totalUsersData.map(d => d.totalusers)),
     installsData: JSON.stringify(installsChartData.map(d => d.installs)),
-    uninstallsData: JSON.stringify(installsChartData.map(d => d.uninstalls))
+    uninstallsData: JSON.stringify(installsChartData.map(d => d.uninstalls)),
+    heatingNotificationData: JSON.stringify(heatingNotificationData)
   })
 })
 
@@ -322,6 +321,40 @@ async function getDataForInstallsChart (companyName) {
   
   ON datetable.date = a1.date;`, [companyName])
   return data.rows
+}
+
+async function getDataForHeatingNotifications (companyName) {
+  const data = await query(`
+  SELECT datetable.date, COALESCE(a1.clickedDone, 0) AS clickeddone, COALESCE(a1.clickedNotNow, 0) AS clickednotnow 
+  FROM  
+  (
+    select i::date AS date from generate_series(
+    (
+    SELECT timestamp::date FROM action_log
+    ORDER BY timestamp ASC
+    LIMIT 1
+    ), 
+      current_date, '1 day'::interval) i
+      WHERE (EXTRACT(ISODOW FROM i) < 6)
+  ) AS datetable 
+  LEFT JOIN (
+  
+    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = 15, FALSE)) AS clickedDone, COUNT(NULLIF(action_id = 16, FALSE)) AS clickedNotNow
+    FROM action_log
+    INNER JOIN company ON action_log.company_id = company.id
+    WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
+    AND company.name ILIKE $1
+    GROUP BY (date)
+    ORDER BY (date)
+  ) AS a1
+  
+  ON datetable.date = a1.date;`, [companyName])
+  const clickedDone = data.rows.map(d => parseInt(d.clickeddone))
+  const clickedNotNow = data.rows.map(d => parseInt(d.clickednotnow))
+  const total = clickedDone.map((d, i) => d + clickedNotNow[i])
+  const percentages = total.map((d, i) => (d === 0) ? 0 : (100 * (clickedDone[i] / d)).toFixed(1))
+
+  return percentages
 }
 
 async function query (queryTextOrConfig, values) {
