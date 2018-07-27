@@ -53,27 +53,6 @@ app.get('/admin', auth, async (req, res) => {
   res.render('admin', { companies: result.rows, error: messages.error })
 })
 
-app.get('/admin/company/:code', async (req, res) => {
-  const { code } = req.params
-  const company = await getCompany(code)
-  const cumulativeData = await generateCumulativeData(company.name)
-  const activeUsersData = await getDataForActiveUsers(company.name)
-  const totalUsersData = await getDataForTotalUsers(company.name)
-  const installsChartData = await getDataForInstallsChart(company.name)
-  const heatingNotificationData = await getDataForHeatingNotifications(company.name)
-  const labels = [...Array(installsChartData.length).keys()].map(k => `${k + 1}`)
-  res.render('company', {
-    name: company.name,
-    cumulativeData,
-    labels: JSON.stringify(labels),
-    activeUsersDate: JSON.stringify(activeUsersData.map(d => d.activeusers)),
-    totalUsersData: JSON.stringify(totalUsersData.map(d => d.totalusers)),
-    installsData: JSON.stringify(installsChartData.map(d => d.installs)),
-    uninstallsData: JSON.stringify(installsChartData.map(d => d.uninstalls)),
-    heatingNotificationData: JSON.stringify(heatingNotificationData)
-  })
-})
-
 app.post('/admin/company/:code/delete', auth, async (req, res) => {
   const { code } = req.params
   await query('DELETE FROM company WHERE code = $1', [code])
@@ -210,6 +189,33 @@ async function getCompanyDataForDownload (companyName) {
   WHERE company.name ILIKE $1;`, [companyName])
 }
 
+app.get('/admin/company/:code', async (req, res) => {
+  const { code } = req.params
+  const company = await getCompany(code)
+  const cumulativeData = await generateCumulativeData(company.name)
+  const activeUsersData = await getDataForActiveUsers(company.name)
+  const totalUsersData = await getDataForTotalUsers(company.name)
+  const installsChartData = await getDataForInstallsChart(company.name)
+  const heatingNotificationData = await getDataForHeatingNotifications(company.name)
+  const optInHibernationData = await getHibernationOptInData(company.name)
+  const optInHeatingData = await getHeatingOptInData(company.name)
+  const optInHibernationPercentages = calculateAsPercentageOfTotalUsers(optInHibernationData.map(d => parseInt(d.optedinusers)), totalUsersData.map(d => parseInt(d.totalusers)))
+  const optInHeatingPercentages = calculateAsPercentageOfTotalUsers(optInHeatingData.map(d => parseInt(d.optedinusers)), totalUsersData.map(d => parseInt(d.totalusers)))
+  const labels = [...Array(installsChartData.length).keys()].map(k => `${k + 1}`)
+  res.render('company', {
+    name: company.name,
+    cumulativeData,
+    labels: JSON.stringify(labels),
+    activeUsersDate: JSON.stringify(activeUsersData.map(d => d.activeusers)),
+    totalUsersData: JSON.stringify(totalUsersData.map(d => d.totalusers)),
+    installsData: JSON.stringify(installsChartData.map(d => d.installs)),
+    uninstallsData: JSON.stringify(installsChartData.map(d => d.uninstalls)),
+    heatingNotificationData: JSON.stringify(heatingNotificationData),
+    optInHibernationPercentages: JSON.stringify(optInHibernationPercentages),
+    optInHeatingPercentages: JSON.stringify(optInHeatingPercentages)
+  })
+})
+
 async function generateCumulativeData (companyName) {
   const zappHibernations = await getNumbersForAction(companyName, 'ZappHibernation')
   const heatingClickedDone = await getNumbersForAction(companyName, 'HeatingFirstLoginDone')
@@ -323,6 +329,84 @@ async function getDataForInstallsChart (companyName) {
   return data.rows
 }
 
+async function getHibernationOptInData (companyName) {
+  const data = await query(`SELECT datetable.date, COUNT(optintable.pseudonym) AS optedinusers FROM 
+
+  (
+    select i::date AS date from generate_series(
+    (
+    SELECT timestamp::date FROM action_log
+    ORDER BY timestamp ASC
+    LIMIT 1
+    ), 
+      current_date, '1 day'::interval) i
+      WHERE (EXTRACT(ISODOW FROM i) < 6)
+  ) AS datetable 
+  
+  
+  LEFT JOIN 
+  
+  (SELECT pseudonym, optindate, MIN(optoutdate) AS optoutdate FROM 
+  
+    (SELECT  a1.pseudonym,  a1."timestamp" AS optindate, a2."timestamp" AS optoutdate
+    FROM action_log AS a1
+    LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id IN (8,14) AND a1."timestamp" < a2."timestamp"
+  
+    INNER JOIN company ON a1.company_id = company.id
+    WHERE a1.action_id = 7 AND company.name ILIKE $1) AS dateranges
+  
+  
+  GROUP BY pseudonym, optindate) 
+  
+  AS optintable
+  
+  ON optintable.optindate <= datetable.date + interval '1 day' AND (optintable.optoutdate > datetable.date + interval '1 day' OR optintable.optoutdate IS NULL)
+  
+  GROUP BY datetable.date
+  ORDER BY datetable.date ASC 
+  ;`, [companyName])
+  return data.rows
+}
+
+async function getHeatingOptInData (companyName) {
+  const data = await query(`SELECT datetable.date, COUNT(optintable.pseudonym) AS optedinusers FROM 
+
+  (
+    select i::date AS date from generate_series(
+    (
+    SELECT timestamp::date FROM action_log
+    ORDER BY timestamp ASC
+    LIMIT 1
+    ), 
+      current_date, '1 day'::interval) i
+      WHERE (EXTRACT(ISODOW FROM i) < 6)
+  ) AS datetable 
+  
+  
+  LEFT JOIN 
+  
+  (SELECT pseudonym, optindate, MIN(optoutdate) AS optoutdate FROM 
+  
+    (SELECT  a1.pseudonym,  a1."timestamp" AS optindate, a2."timestamp" AS optoutdate
+    FROM action_log AS a1
+    LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id IN (10,14) AND a1."timestamp" < a2."timestamp"
+  
+    INNER JOIN company ON a1.company_id = company.id
+    WHERE a1.action_id = 9 AND company.name ILIKE $1) AS dateranges
+  
+  
+  GROUP BY pseudonym, optindate) 
+  
+  AS optintable
+  
+  ON optintable.optindate <= datetable.date + interval '1 day' AND (optintable.optoutdate > datetable.date + interval '1 day' OR optintable.optoutdate IS NULL)
+  
+  GROUP BY datetable.date
+  ORDER BY datetable.date ASC 
+  ;`, [companyName])
+  return data.rows
+}
+
 async function getDataForHeatingNotifications (companyName) {
   const data = await query(`
   SELECT datetable.date, COALESCE(a1.clickedDone, 0) AS clickeddone, COALESCE(a1.clickedNotNow, 0) AS clickednotnow 
@@ -355,6 +439,10 @@ async function getDataForHeatingNotifications (companyName) {
   const percentages = total.map((d, i) => (d === 0) ? 0 : (100 * (clickedDone[i] / d)).toFixed(1))
 
   return percentages
+}
+
+function calculateAsPercentageOfTotalUsers (values, totalUsers) {
+  return totalUsers.map((t, i) => (t === 0) ? 0 : (100 * (values[i] / t)).toFixed(1))
 }
 
 async function query (queryTextOrConfig, values) {

@@ -112,6 +112,52 @@
   </script>
 </div>
 <div class="chartContainer">
+  <h4>Users Opted In</h4>
+  <canvas id="optedInChart"></canvas>
+  <script>
+    var ctx = document.getElementById('optedInChart').getContext('2d');
+    let optedInChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: '% of Users Opted In to Hibernation',
+            data: {{{optInHibernationPercentages}}},
+            borderColor: '#EF103C',
+            fill: false
+        }, {label: '% of Users Opted In to Hibernation',
+            data: {{{optInHeatingPercentages}}},
+            borderColor: '#3A2E39',
+            fill: false}
+        ],
+        labels: {{{labels}}}
+    },
+    options: {
+      maintainAspectRatio: false,
+      elements: {
+        line: {
+          tension: 0
+        }
+      },
+        scales: {
+          xAxes: [{
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Weekdays in Zapp trial'
+                }
+            }],
+            yAxes: [{
+                ticks: {
+                    stepSize: 10,
+                    suggestedMax: 100
+                }
+ 
+            }]
+        }
+    }
+});
+  </script>
+</div>
+<div class="chartContainer">
   <h4>Heating Notification Responses</h4>
   <canvas id="heatingNotificationChart"></canvas>
   <script>
