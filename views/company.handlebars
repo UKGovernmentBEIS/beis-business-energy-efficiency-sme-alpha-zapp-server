@@ -22,26 +22,25 @@
 </div>
 
 <div class="chartContainer">
-  <h4>Active and Inactive Users</h4>
-  <canvas id="activeUsersChart"></canvas>
+  <h4>Zapp Users</h4>
+  <canvas id="usersChart"></canvas>
   <script>
-    var ctx = document.getElementById('activeUsersChart').getContext('2d');
-    let activeUsersChart = new Chart(ctx, {
+    var ctx = document.getElementById('usersChart').getContext('2d');
+    let usersChart = new Chart(ctx, {
     type: 'line',
     data: {
         datasets: [{
-            label: 'Daily Active Users',
-            data: {{{activeUserData}}},
+            label: 'Daily Total Users',
+            data: {{{activeUsersDate}}},
             borderColor: '#EF103C',
             fill: false
-        }, {label: 'Daily Inactive Users',
-            data: {{{inactiveUserData}}},
+        }, {label: 'Daily Active Users',
+            data: {{{totalUsersData}}},
             borderColor: '#3A2E39',
             fill: false}
         ],
         labels: {{{labels}}}
     },
-
     options: {
       maintainAspectRatio: false,
       elements: {

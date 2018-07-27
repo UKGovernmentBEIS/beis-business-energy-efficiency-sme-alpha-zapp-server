@@ -57,15 +57,19 @@ app.get('/admin/company/:code', async (req, res) => {
   const { code } = req.params
   const company = await getCompany(code)
   const cumulativeData = await generateCumulativeData(company.name)
-  // const activeUsersChartData = await getDataForActiveUsersChart(company.name)
+  const activeUsersData = await getDataForActiveUsers(company.name)
+  const totalUsersData = await getDataForTotalUsers(company.name)
   const installsChartData = await getDataForInstallsChart(company.name)
   const labels = [...Array(installsChartData.length).keys()].map(k => `Day ${k + 1}`)
+  console.log(activeUsersData.map(d => d.activeusers))
+  console.log(totalUsersData.map(d => d.totalusers))
+  console.log(installsChartData.map(d => d.installs))
   res.render('company', {
     name: company.name,
     cumulativeData,
     labels: JSON.stringify(labels),
-    // activeUserData: JSON.stringify(activeUsersChartData.map(d => d.installs)),
-    // inactiveUserData: JSON.stringify(activeUsersChartData.map(d => d.uninstalls)),
+    activeUsersDate: JSON.stringify(activeUsersData.map(d => d.activeusers)),
+    totalUsersData: JSON.stringify(totalUsersData.map(d => d.totalusers)),
     installsData: JSON.stringify(installsChartData.map(d => d.installs)),
     uninstallsData: JSON.stringify(installsChartData.map(d => d.uninstalls))
   })
@@ -227,21 +231,45 @@ async function getNumbersForAction (companyName, action) {
   return data.rowCount
 }
 
-async function getDataForActiveUsersChart (companyName) {
-  // const data = await query(`SELECT 
-  // timestamp::date AS date, 
-  // COUNT(NULLIF(action_id = 7, FALSE)) AS installs, 
-  // COUNT(NULLIF(action_id = 8, FALSE)) AS uninstalls
-  // FROM action_log
-  // INNER JOIN company ON action_log.company_id = company.id
-  // WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
-  // AND company.name ILIKE $1
-  // GROUP BY (date)
-  // ORDER BY (date);`, [companyName])
-  // return data.rows
+async function getDataForActiveUsers (companyName) {
+  const data = await query(`SELECT datetable.date, COALESCE(activeuserstable.activeusers, 0) AS activeusers 
+  FROM 
+  
+  (
+    select i::date AS date from generate_series(
+    (
+    SELECT timestamp::date FROM action_log
+    ORDER BY timestamp ASC
+    LIMIT 1
+    ), 
+      current_date, '1 day'::interval) i
+      WHERE (EXTRACT(ISODOW FROM i) < 6)
+  ) AS datetable 
+  
+  LEFT JOIN 
+  
+  (
+    SELECT activedaystable.date, COUNT(pseudonym) AS activeusers
+      FROM (
+        SELECT DISTINCT  a1.pseudonym,  a1."timestamp"::date AS date
+        FROM action_log AS a1
+        INNER JOIN company ON a1.company_id = company.id
+        LEFT JOIN action_log a2 On a1.pseudonym = a2.pseudonym AND a1.timestamp::date = a2.timestamp::date AND a2.action_id = 14
+        WHERE a2.id IS NULL
+        AND (EXTRACT(ISODOW FROM a1."timestamp") < 6)
+        AND company.name ILIKE $1
+        ) AS activedaystable
+    GROUP BY activedaystable.date
+    ORDER BY activedaystable.date
+  ) AS activeuserstable
+  
+  ON datetable.date = activeuserstable.date
+  
+  ;`, [companyName])
+  return data.rows
 }
 
-async function getNumberOfTotalUsers (companyName) {
+async function getDataForTotalUsers (companyName) {
   const data = await query(`
   SELECT datetable.date, COUNT(installtable.pseudonym) AS totalusers FROM 
 
@@ -260,7 +288,7 @@ LEFT JOIN
 FROM action_log AS a1
 LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id = 14
 INNER JOIN company ON a1.company_id = company.id
-WHERE a1.action_id = 13 AND company.name = 'Softwire') AS installtable
+WHERE a1.action_id = 13 AND company.name = $1) AS installtable
 ON installtable.installdate <= datetable.date AND (installtable.uninstalldate > datetable.date OR installtable.uninstalldate IS NULL)
 GROUP BY datetable.date
 ORDER BY datetable.date ASC;`, [companyName])
