@@ -1,5 +1,50 @@
 var init = function (dashboardData) {
 
+  const numberChartOptions = {
+    maintainAspectRatio: false,
+    elements: {
+      line: {
+        tension: 0
+      }
+    },
+    scales: {
+      xAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: 'Weekdays in Zapp trial'
+        }
+      }],
+      yAxes: [{
+        ticks: {
+          stepSize: 5
+        }
+      }]
+    }
+  }
+
+  const percentageChartOptions = {
+    maintainAspectRatio: false,
+    elements: {
+      line: {
+        tension: 0
+      }
+    },
+    scales: {
+      xAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: 'Weekdays in Zapp trial'
+        }
+      }],
+      yAxes: [{
+        ticks: {
+          stepSize: 10,
+          suggestedMax: 100
+        }
+      }]
+    }
+  }
+
   var ctx = document.getElementById('usersChart').getContext('2d');
   let usersChart = new Chart(ctx, {
     type: 'line',
@@ -14,32 +59,10 @@ var init = function (dashboardData) {
         data: dashboardData.dailyUserData.activeUsers,
         borderColor: '#3A2E39',
         fill: false
-      }
-      ],
+      }],
       labels: dashboardData.labels
     },
-    options: {
-      maintainAspectRatio: false,
-      elements: {
-        line: {
-          tension: 0
-        }
-      },
-      scales: {
-        xAxes: [{
-          scaleLabel: {
-            display: true,
-            labelString: 'Weekdays in Zapp trial'
-          }
-        }],
-        yAxes: [{
-          ticks: {
-            stepSize: 5
-          }
-
-        }]
-      }
-    }
+    options: numberChartOptions
   })
 
   var ctx = document.getElementById('installsChart').getContext('2d');
@@ -56,32 +79,10 @@ var init = function (dashboardData) {
         data: dashboardData.installationData.uninstallations,
         borderColor: '#3A2E39',
         fill: false
-      }
-      ],
+      }],
       labels: dashboardData.labels
     },
-    options: {
-      maintainAspectRatio: false,
-      elements: {
-        line: {
-          tension: 0
-        }
-      },
-      scales: {
-        xAxes: [{
-          scaleLabel: {
-            display: true,
-            labelString: 'Weekdays in Zapp trial'
-          }
-        }],
-        yAxes: [{
-          ticks: {
-            stepSize: 5
-          }
-
-        }]
-      }
-    }
+    options: numberChartOptions
   })
 
   var ctx = document.getElementById('optedInChart').getContext('2d');
@@ -98,33 +99,10 @@ var init = function (dashboardData) {
         data: dashboardData.optedInData.optedInHeatingPercentages,
         borderColor: '#3A2E39',
         fill: false
-      }
-      ],
+      }],
       labels: dashboardData.labels
     },
-    options: {
-      maintainAspectRatio: false,
-      elements: {
-        line: {
-          tension: 0
-        }
-      },
-      scales: {
-        xAxes: [{
-          scaleLabel: {
-            display: true,
-            labelString: 'Weekdays in Zapp trial'
-          }
-        }],
-        yAxes: [{
-          ticks: {
-            stepSize: 10,
-            suggestedMax: 100
-          }
-
-        }]
-      }
-    }
+    options: percentageChartOptions
   })
 
   var ctx = document.getElementById('hibernationChart').getContext('2d');
@@ -146,33 +124,10 @@ var init = function (dashboardData) {
         data: dashboardData.hibernationData.otherPercentages,
         borderColor: '#3A2E39',
         fill: false
-      }
-      ],
+      }],
       labels: dashboardData.labels
     },
-    options: {
-      maintainAspectRatio: false,
-      elements: {
-        line: {
-          tension: 0
-        }
-      },
-      scales: {
-        xAxes: [{
-          scaleLabel: {
-            display: true,
-            labelString: 'Weekdays in Zapp trial'
-          }
-        }],
-        yAxes: [{
-          ticks: {
-            stepSize: 10,
-            suggestedMax: 100
-          }
-
-        }]
-      }
-    }
+    options: percentageChartOptions
   })
 
   var ctx = document.getElementById('heatingNotificationChart').getContext('2d');
@@ -184,32 +139,9 @@ var init = function (dashboardData) {
         data: dashboardData.heatingNotificationData.heatingNotificationData,
         borderColor: '#EF103C',
         fill: false
-      }
-      ],
+      }],
       labels: dashboardData.labels
     },
-    options: {
-      maintainAspectRatio: false,
-      elements: {
-        line: {
-          tension: 0
-        }
-      },
-      scales: {
-        xAxes: [{
-          scaleLabel: {
-            display: true,
-            labelString: 'Weekdays in Zapp trial'
-          }
-        }],
-        yAxes: [{
-          ticks: {
-            stepSize: 10,
-            suggestedMax: 100
-          }
-
-        }]
-      }
-    }
+    options: percentageChartOptions
   })
 }
