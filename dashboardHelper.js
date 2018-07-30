@@ -67,7 +67,8 @@ async function getActiveUsersData (companyName) {
         SELECT DISTINCT  a1.pseudonym,  a1."timestamp"::date AS date
         FROM action_log AS a1
         INNER JOIN company ON a1.company_id = company.id
-        LEFT JOIN action_log a2 On a1.pseudonym = a2.pseudonym AND a1.timestamp::date = a2.timestamp::date AND a2.action_id = 14
+        LEFT JOIN action_log a2 On a1.pseudonym = a2.pseudonym AND a1.timestamp::date = a2.timestamp::date AND a2.action_id = (
+          SELECT id FROM action WHERE code ILIKE 'UninstalledZapp')
         WHERE a2.id IS NULL
         AND (EXTRACT(ISODOW FROM a1."timestamp") < 6)
         AND company.name ILIKE $1
@@ -93,9 +94,11 @@ async function getTotalUsersData (companyName) {
   LEFT JOIN (
     SELECT  a1.pseudonym,  a1."timestamp"::date AS installdate, a2."timestamp"::date AS uninstalldate
     FROM action_log AS a1
-    LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id = 14
+    LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id = (
+      SELECT id FROM action WHERE code ILIKE 'UninstalledZapp')
     INNER JOIN company ON a1.company_id = company.id
-    WHERE a1.action_id = 13 AND company.name = $1) AS installtable
+    WHERE a1.action_id = (
+      SELECT id FROM action WHERE code ILIKE 'InstalledZapp') AND company.name = $1) AS installtable
   ON installtable.installdate <= datetable.date AND (installtable.uninstalldate > datetable.date OR installtable.uninstalldate IS NULL)
   GROUP BY datetable.date
   ORDER BY datetable.date ASC;`, [companyName])
@@ -113,7 +116,9 @@ async function getInstallationData (companyName) {
     current_date, '1 day'::interval) AS i
   WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
   LEFT JOIN (
-    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = 13, FALSE)) AS installs, COUNT(NULLIF(action_id = 14, FALSE)) AS uninstalls
+    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = (
+      SELECT id FROM action WHERE code ILIKE 'InstalledZapp'), FALSE)) AS installs, COUNT(NULLIF(action_id = (
+        SELECT id FROM action WHERE code ILIKE 'UninstalledZapp'), FALSE)) AS uninstalls
     FROM action_log
     INNER JOIN company ON action_log.company_id = company.id
     WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
@@ -132,8 +137,8 @@ async function getInstallationData (companyName) {
 }
 
 async function getOptedInData (companyName, totalUsers) {
-  let optedInHibernationData = await getOptedInDataByActionId(companyName, 7, 8)
-  let optedInHeatingData = await getOptedInDataByActionId(companyName, 9, 10)
+  let optedInHibernationData = await getOptedInDataByActionCode(companyName, 'OptInToHibernate', 'OptOutOfHibernate')
+  let optedInHeatingData = await getOptedInDataByActionCode(companyName, 'OptInToHeating', 'OptOutOfHeating')
 
   optedInHibernationData = optedInHibernationData.map(d => parseInt(d.optedinusers))
   optedInHeatingData = optedInHeatingData.map(d => parseInt(d.optedinusers))
@@ -152,7 +157,7 @@ function calculateAsPercentageOfTotalUsers (values, totalUsers) {
   return totalUsers.map((t, i) => (t === 0) ? (0).toString() : (100 * (values[i] / t)).toFixed(1))
 }
 
-async function getOptedInDataByActionId (companyName, optInActionId, optOutActionId) {
+async function getOptedInDataByActionCode (companyName, optInActionCode, optOutActionCode) {
   const data = await query(`SELECT 
   datetable.date, COUNT(optintable.pseudonym) AS optedinusers 
   FROM (
@@ -167,15 +172,18 @@ async function getOptedInDataByActionId (companyName, optInActionId, optOutActio
     FROM (
       SELECT  a1.pseudonym,  a1."timestamp" AS optindate, a2."timestamp" AS optoutdate
       FROM action_log AS a1
-      LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id IN ($3,14) AND a1."timestamp" < a2."timestamp"
+      LEFT JOIN action_log AS a2 ON a1.pseudonym = a2.pseudonym AND a2.action_id IN ((
+        SELECT id FROM action WHERE code ILIKE $3),(
+        SELECT id FROM action WHERE code ILIKE 'UninstalledZapp')) AND a1."timestamp" < a2."timestamp"
     INNER JOIN company ON a1.company_id = company.id
-    WHERE a1.action_id = $2 AND company.name ILIKE $1) AS dateranges
+    WHERE a1.action_id = (
+      SELECT id FROM action WHERE code ILIKE $2) AND company.name ILIKE $1) AS dateranges
   GROUP BY pseudonym, optindate) 
   AS optintable
   ON optintable.optindate <= datetable.date + interval '1 day' AND (optintable.optoutdate > datetable.date + interval '1 day' OR optintable.optoutdate IS NULL)
   GROUP BY datetable.date
   ORDER BY datetable.date ASC 
-  ;`, [companyName, optInActionId, optOutActionId])
+  ;`, [companyName, optInActionCode, optOutActionCode])
   return data.rows
 }
 
@@ -190,7 +198,9 @@ async function getHibernationData (companyName, totalUsers) {
     current_date, '1 day'::interval) AS i
   WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
   LEFT JOIN (
-    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = 11, FALSE)) AS hibernated, COUNT(NULLIF(action_id = 12, FALSE)) AS nottonight
+    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = (
+      SELECT id FROM action WHERE code ILIKE 'ZappHibernation'), FALSE)) AS hibernated, COUNT(NULLIF(action_id = (
+        SELECT id FROM action WHERE code ILIKE 'ClickedNotTonight'), FALSE)) AS nottonight
     FROM action_log
     INNER JOIN company ON action_log.company_id = company.id
     WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
@@ -227,7 +237,9 @@ async function getHeatingNotificationData (companyName) {
     current_date, '1 day'::interval) AS i
   WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
   LEFT JOIN (
-    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = 15, FALSE)) AS clickedDone, COUNT(NULLIF(action_id = 16, FALSE)) AS clickedNotNow
+    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = (
+      SELECT id FROM action WHERE code ILIKE 'HeatingFirstLoginDone'), FALSE)) AS clickedDone, COUNT(NULLIF(action_id = (
+        SELECT id FROM action WHERE code ILIKE 'HeatingFirstLoginNotNow'), FALSE)) AS clickedNotNow
     FROM action_log
     INNER JOIN company ON action_log.company_id = company.id
     WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
