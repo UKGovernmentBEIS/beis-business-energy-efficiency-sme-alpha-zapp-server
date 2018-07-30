@@ -1,14 +1,15 @@
 const apicache = require('apicache')
+const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser')
 const csv = require('csv-express')
-const express = require('express')
-const basicAuth = require('express-basic-auth')
 const dashboardHelper = require('./dashboardHelper')
-const flash = require('express-flash')
-const exphbs = require('express-handlebars')
-const session = require('express-session')
 const enforce = require('express-sslify')
+const exphbs = require('express-handlebars')
+const express = require('express')
+const flash = require('express-flash')
+const { query } = require('./databaseClient')
 const request = require('request')
+const session = require('express-session')
 
 const app = express()
 const http = require('http').Server(app)
@@ -48,7 +49,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/admin', auth, async (req, res) => {
-  const result = await dashboardHelper.query('SELECT * FROM company;')
+  const result = await query('SELECT * FROM company;')
   const messages = req.flash()
   res.render('admin', { companies: result.rows, error: messages.error })
 })
@@ -65,7 +66,7 @@ app.get('/admin/company/:code', async (req, res) => {
 
 app.post('/admin/company/:code/delete', auth, async (req, res) => {
   const { code } = req.params
-  await dashboardHelper.query('DELETE FROM company WHERE code = $1', [code])
+  await query('DELETE FROM company WHERE code = $1', [code])
   res.redirect('/admin')
 })
 
@@ -73,7 +74,7 @@ app.post('/admin/company/new', auth, async (req, res) => {
   const { code, name } = req.body
   if (code && name) {
     try {
-      await dashboardHelper.query('INSERT INTO company (code, name) VALUES ($1, $2);', [code, name])
+      await query('INSERT INTO company (code, name) VALUES ($1, $2);', [code, name])
     } catch (err) {
       console.warn(err)
       req.flash('error', `Could not add company '${name}' with code '${code}'. Please ensure that both the name and code are unique.`)
@@ -142,7 +143,7 @@ io.on('connection', socket => {
 
     if (company.id && userPseudonym && actionId) {
       try {
-        await dashboardHelper.query(`INSERT INTO action_log(company_id, pseudonym, action_id)
+        await query(`INSERT INTO action_log(company_id, pseudonym, action_id)
         VALUES ($1, $2, $3);`, [company.id, userPseudonym, actionId])
       } catch (err) {
         console.warn(err)
@@ -162,18 +163,18 @@ io.on('connection', socket => {
 })
 
 async function getCompany (code) {
-  const result = await dashboardHelper.query('SELECT * FROM company WHERE code = $1;', [code])
+  const result = await query('SELECT * FROM company WHERE code = $1;', [code])
   return result.rows[0]
 }
 
 async function getActionId (code) {
-  const result = await dashboardHelper.query('SELECT id FROM action WHERE code = $1;', [code])
+  const result = await query('SELECT id FROM action WHERE code = $1;', [code])
   const row = result.rows[0]
   return row ? row.id : null
 }
 
 async function getAllDataForDownload (code) {
-  return dashboardHelper.query(`SELECT 
+  return query(`SELECT 
     to_char(timestamp::date,'DD/MM/YYYY') AS date,  
     timestamp::time(0) AS time,  
     company.name AS company, 
@@ -186,7 +187,7 @@ async function getAllDataForDownload (code) {
 }
 
 async function getCompanyDataForDownload (companyName) {
-  return dashboardHelper.query(`SELECT 
+  return query(`SELECT 
     to_char(timestamp::date,'DD/MM/YYYY') AS date,  
     timestamp::time(0) AS time,  
     company.name AS company, 
