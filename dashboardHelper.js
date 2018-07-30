@@ -31,7 +31,6 @@ module.exports = {
   }
 }
 
-
 async function getCumulativeDataByAction (companyName, action) {
   const data = await query(`SELECT 
   company.name, action.code

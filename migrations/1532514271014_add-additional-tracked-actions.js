@@ -9,12 +9,14 @@ exports.up = (pgm) => {
 }
 
 exports.down = (pgm) => {
-  pgm.db.query(`DELETE 
-  FROM action_log
-  WHERE action_id IN (13, 14, 15, 16)
-  ;`)
+  pgm.db.query(`DELETE
+  FROM action_log 
+    USING action
+  WHERE action_log.action_id = action.id AND
+  action.code IN ('InstalledZapp', 'UninstalledZapp', 'HeatingFirstLoginDone', 'HeatingFirstLoginNotNow');
+    `)
   pgm.db.query(`DELETE 
   FROM action
-  WHERE id IN (13, 14, 15, 16)
+  WHERE code IN ('InstalledZapp', 'UninstalledZapp', 'HeatingFirstLoginDone', 'HeatingFirstLoginNotNow')
   ;`)
 }
