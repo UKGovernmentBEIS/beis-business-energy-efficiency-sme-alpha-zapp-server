@@ -39,6 +39,7 @@ var init = function (chartData) {
       yAxes: [{
         ticks: {
           stepSize: 10,
+          suggestedMin: 0,
           suggestedMax: 100
         }
       }]
