@@ -11,11 +11,11 @@
     <tbody>
       <tr>
         <td>Cumulative Zapp driven hibernations</td>
-        <td>{{cumulativeData.zappHibernations}}</td>
+        <td>{{dashboardData.cumulativeData.zappHibernations}}</td>
       </tr>
       <tr>
         <td>Cumulative Zapp driven heating actions</td>
-        <td>{{cumulativeData.heatingClickedDone}}</td>
+        <td>{{dashboardData.cumulativeData.heatingActions}}</td>
       </tr>
     </tbody>
   </table>
@@ -31,15 +31,15 @@
     data: {
         datasets: [{
             label: 'Daily Total Users',
-            data: {{{activeUsersDate}}},
+            data: {{{dashboardData.dailyUserData.totalUsers}}},
             borderColor: '#EF103C',
             fill: false
         }, {label: 'Daily Active Users',
-            data: {{{totalUsersData}}},
+            data: {{{dashboardData.dailyUserData.activeUsers}}},
             borderColor: '#3A2E39',
             fill: false}
         ],
-        labels: {{{labels}}}
+        labels: {{{dashboardData.labels}}}
     },
     options: {
       maintainAspectRatio: false,
@@ -76,15 +76,15 @@
     data: {
         datasets: [{
             label: 'Zapp Installations',
-            data: {{{installsData}}},
+            data: {{{dashboardData.installationData.installations}}},
             borderColor: '#EF103C',
             fill: false
         }, {label: 'Zapp Uninstallations',
-            data: {{{uninstallsData}}},
+            data: {{{dashboardData.installationData.uninstallations}}},
             borderColor: '#3A2E39',
             fill: false}
         ],
-        labels: {{{labels}}}
+        labels: {{{dashboardData.labels}}}
     },
     options: {
       maintainAspectRatio: false,
@@ -121,15 +121,15 @@
     data: {
         datasets: [{
             label: '% of Users Opted In to Hibernation',
-            data: {{{optInHibernationPercentages}}},
+            data: {{{dashboardData.optedInData.optedInHibernationPercentages}}},
             borderColor: '#EF103C',
             fill: false
         }, {label: '% of Users Opted In to Hibernation',
-            data: {{{optInHeatingPercentages}}},
+            data: {{{dashboardData.optedInData.optedInHeatingPercentages}}},
             borderColor: '#3A2E39',
             fill: false}
         ],
-        labels: {{{labels}}}
+        labels: {{{dashboardData.labels}}}
     },
     options: {
       maintainAspectRatio: false,
@@ -167,12 +167,12 @@
     data: {
         datasets: [{
             label: '% of Heating Actions Taken When Heating Notification Shown',
-            data: {{{heatingNotificationData}}},
+            data: {{{dashboardData.heatingNotificationData.heatingNotificationData}}},
             borderColor: '#EF103C',
             fill: false
         }
         ],
-        labels: {{{labels}}}
+        labels: {{{dashboardData.labels}}}
     },
     options: {
       maintainAspectRatio: false,
@@ -200,7 +200,6 @@
 });
   </script>
 </div>
-
 
 <div class="download">
   <h3>Download Zapp usage data for {{name}}</h3>
