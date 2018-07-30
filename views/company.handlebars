@@ -11,11 +11,11 @@
     <tbody>
       <tr>
         <td>Cumulative Zapp driven hibernations</td>
-        <td>{{dashboardData.cumulativeData.zappHibernations}}</td>
+        <td>{{cumulativeData.zappHibernations}}</td>
       </tr>
       <tr>
         <td>Cumulative Zapp driven heating actions</td>
-        <td>{{dashboardData.cumulativeData.heatingActions}}</td>
+        <td>{{cumulativeData.heatingActions}}</td>
       </tr>
     </tbody>
   </table>
@@ -55,5 +55,5 @@
 
 <script src='/scripts/company.js'></script>
 <script>
-    init({{{dashboardData}}})
+    init({{{chartData}}})
 </script>

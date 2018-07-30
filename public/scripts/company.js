@@ -1,4 +1,4 @@
-var init = function (dashboardData) {
+var init = function (chartData) {
 
   const numberChartOptions = {
     maintainAspectRatio: false,
@@ -51,16 +51,16 @@ var init = function (dashboardData) {
     data: {
       datasets: [{
         label: 'Daily Total Users',
-        data: dashboardData.dailyUserData.totalUsers,
+        data: chartData.dailyUserData.totalUsers,
         borderColor: '#EF103C',
         fill: false
       }, {
         label: 'Daily Active Users',
-        data: dashboardData.dailyUserData.activeUsers,
+        data: chartData.dailyUserData.activeUsers,
         borderColor: '#3A2E39',
         fill: false
       }],
-      labels: dashboardData.labels
+      labels: chartData.labels
     },
     options: numberChartOptions
   })
@@ -71,16 +71,16 @@ var init = function (dashboardData) {
     data: {
       datasets: [{
         label: 'Zapp Installations',
-        data: dashboardData.installationData.installations,
+        data: chartData.installationData.installations,
         borderColor: '#EF103C',
         fill: false
       }, {
         label: 'Zapp Uninstallations',
-        data: dashboardData.installationData.uninstallations,
+        data: chartData.installationData.uninstallations,
         borderColor: '#3A2E39',
         fill: false
       }],
-      labels: dashboardData.labels
+      labels: chartData.labels
     },
     options: numberChartOptions
   })
@@ -91,16 +91,16 @@ var init = function (dashboardData) {
     data: {
       datasets: [{
         label: '% of Users Opted In to Hibernation',
-        data: dashboardData.optedInData.optedInHibernationPercentages,
+        data: chartData.optedInData.optedInHibernationPercentages,
         borderColor: '#EF103C',
         fill: false
       }, {
         label: '% of Users Opted In to Heating',
-        data: dashboardData.optedInData.optedInHeatingPercentages,
+        data: chartData.optedInData.optedInHeatingPercentages,
         borderColor: '#3A2E39',
         fill: false
       }],
-      labels: dashboardData.labels
+      labels: chartData.labels
     },
     options: percentageChartOptions
   })
@@ -111,21 +111,21 @@ var init = function (dashboardData) {
     data: {
       datasets: [{
         label: '% of Zapp Driven Hibernations',
-        data: dashboardData.hibernationData.hibernatedPercentages,
+        data: chartData.hibernationData.hibernatedPercentages,
         borderColor: '#EF103C',
         fill: false
       }, {
         label: '% of Users Clicked "Not Tonight"',
-        data: dashboardData.hibernationData.notTonightPercentages,
+        data: chartData.hibernationData.notTonightPercentages,
         borderColor: '#0367BF',
         fill: false
       }, {
         label: '% Other',
-        data: dashboardData.hibernationData.otherPercentages,
+        data: chartData.hibernationData.otherPercentages,
         borderColor: '#3A2E39',
         fill: false
       }],
-      labels: dashboardData.labels
+      labels: chartData.labels
     },
     options: percentageChartOptions
   })
@@ -136,11 +136,11 @@ var init = function (dashboardData) {
     data: {
       datasets: [{
         label: '% of Heating Actions Taken When Heating Notification Shown',
-        data: dashboardData.heatingNotificationData.heatingNotificationData,
+        data: chartData.heatingNotificationData.heatingNotificationData,
         borderColor: '#EF103C',
         fill: false
       }],
-      labels: dashboardData.labels
+      labels: chartData.labels
     },
     options: percentageChartOptions
   })

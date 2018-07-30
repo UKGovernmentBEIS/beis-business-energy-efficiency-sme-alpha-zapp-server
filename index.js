@@ -57,10 +57,12 @@ app.get('/admin', auth, async (req, res) => {
 app.get('/admin/company/:code', async (req, res) => {
   const { code } = req.params
   const company = await getCompany(code)
-  const dashboardData = await dashboardHelper.getDashboardData(company.name)
+  const cumulativeData = await dashboardHelper.getCumulativeData(company.name)
+  const chartData = await dashboardHelper.getChartData(company.name)
   res.render('company', {
     name: company.name,
-    dashboardData: JSON.stringify(dashboardData)
+    cumulativeData,
+    chartData: JSON.stringify(chartData)
   })
 })
 

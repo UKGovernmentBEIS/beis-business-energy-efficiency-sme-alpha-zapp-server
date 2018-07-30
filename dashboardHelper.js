@@ -1,11 +1,20 @@
 const { query } = require('./databaseClient')
 
 module.exports = {
-  getDashboardData: async function (companyName) {
+
+  getCumulativeData: async function (companyName) {
+    const zappHibernations = await getCumulativeDataByAction(companyName, 'ZappHibernation')
+    const heatingActions = await getCumulativeDataByAction(companyName, 'HeatingFirstLoginDone')
+    return {
+      zappHibernations,
+      heatingActions
+    }
+  },
+
+  getChartData: async function (companyName) {
     const totalUsers = await getTotalUsersData(companyName)
     const labels = [...Array(totalUsers.length).keys()].map(k => `${k + 1}`)
 
-    const cumulativeData = await getCumulativeData(companyName)
     const dailyUserData = await getDailyUserData(companyName, totalUsers)
     const installationData = await getInstallationData(companyName)
     const optedInData = await getOptedInData(companyName, totalUsers)
@@ -13,7 +22,6 @@ module.exports = {
     const heatingNotificationData = await getHeatingNotificationData(companyName)
     return {
       labels,
-      cumulativeData,
       dailyUserData,
       installationData,
       optedInData,
@@ -23,14 +31,6 @@ module.exports = {
   }
 }
 
-async function getCumulativeData (companyName) {
-  const zappHibernations = await getCumulativeDataByAction(companyName, 'ZappHibernation')
-  const heatingActions = await getCumulativeDataByAction(companyName, 'HeatingFirstLoginDone')
-  return {
-    zappHibernations,
-    heatingActions
-  }
-}
 
 async function getCumulativeDataByAction (companyName, action) {
   const data = await query(`SELECT 
