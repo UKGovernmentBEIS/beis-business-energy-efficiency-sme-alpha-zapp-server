@@ -9,6 +9,12 @@ exports.up = (pgm) => {
 }
 
 exports.down = (pgm) => {
-  pgm.db.query(`DELETE FROM action_log;`)
-  pgm.db.query(`DELETE FROM action;`)
+  pgm.db.query(`DELETE 
+  FROM action_log
+  WHERE action_id IN (13, 14, 15, 16)
+  ;`)
+  pgm.db.query(`DELETE 
+  FROM action
+  WHERE id IN (13, 14, 15, 16)
+  ;`)
 }
