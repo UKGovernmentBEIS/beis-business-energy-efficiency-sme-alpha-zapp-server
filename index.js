@@ -59,7 +59,7 @@ app.get('/admin/company/:code', async (req, res) => {
   const dashboardData = await dashboardHelper.getDashboardData(company.name)
   res.render('company', {
     name: company.name,
-    dashboardData
+    dashboardData: JSON.stringify(dashboardData)
   })
 })
 

@@ -12,7 +12,7 @@ module.exports = {
     const hibernationData = await getHibernationData(companyName, totalUsers)
     const heatingNotificationData = await getHeatingNotificationData(companyName)
     return {
-      labels: JSON.stringify(labels),
+      labels,
       cumulativeData,
       dailyUserData,
       installationData,
@@ -55,8 +55,8 @@ async function getDailyUserData (companyName, totalUsers) {
   const activeUsers = await getActiveUsersData(companyName)
 
   return {
-    totalUsers: JSON.stringify(totalUsers.map(d => d.totalusers)),
-    activeUsers: JSON.stringify(activeUsers.map(d => d.activeusers))
+    totalUsers: totalUsers.map(d => d.totalusers),
+    activeUsers: activeUsers.map(d => d.activeusers)
   }
 }
 
@@ -132,8 +132,8 @@ async function getInstallationData (companyName) {
   ) AS a1
   ON datetable.date = a1.date;`, [companyName])
 
-  const installations = JSON.stringify(data.rows.map(d => d.installs))
-  const uninstallations = JSON.stringify(data.rows.map(d => d.uninstalls))
+  const installations = data.rows.map(d => d.installs)
+  const uninstallations = data.rows.map(d => d.uninstalls)
   return {
     installations,
     uninstallations
@@ -152,13 +152,13 @@ async function getOptedInData (companyName, totalUsers) {
   const optedInHeatingPercentages = calculateAsPercentageOfTotalUsers(optedInHeatingData, totalUsers)
 
   return {
-    optedInHibernationPercentages: JSON.stringify(optedInHibernationPercentages),
-    optedInHeatingPercentages: JSON.stringify(optedInHeatingPercentages)
+    optedInHibernationPercentages,
+    optedInHeatingPercentages
   }
 }
 
 function calculateAsPercentageOfTotalUsers (values, totalUsers) {
-  return totalUsers.map((t, i) => (t === 0) ? 0 : (100 * (values[i] / t)).toFixed(1))
+  return totalUsers.map((t, i) => (t === 0) ? (0).toString() : (100 * (values[i] / t)).toFixed(1))
 }
 
 async function getOptedInDataByActionId (companyName, optInActionId, optOutActionId) {
@@ -219,9 +219,9 @@ async function getHibernationData (companyName, totalUsers) {
   const otherPercentages = calculateAsPercentageOfTotalUsers(other, totalUsers)
 
   return {
-    hibernatedPercentages: JSON.stringify(hibernatedPercentages),
-    notTonightPercentages: JSON.stringify(notTonightPercentages),
-    otherPercentages: JSON.stringify(otherPercentages)
+    hibernatedPercentages,
+    notTonightPercentages,
+    otherPercentages
   }
 }
 
@@ -245,13 +245,13 @@ async function getHeatingNotificationData (companyName) {
     ORDER BY (date)
   ) AS a1
   ON datetable.date = a1.date;`, [companyName])
-  
+
   const clickedDone = data.rows.map(d => parseInt(d.clickeddone))
   const clickedNotNow = data.rows.map(d => parseInt(d.clickednotnow))
   const total = clickedDone.map((d, i) => d + clickedNotNow[i])
-  const heatingNotificationData = total.map((d, i) => (d === 0) ? 0 : (100 * (clickedDone[i] / d)).toFixed(1))
+  const heatingNotificationData = total.map((d, i) => (d === 0) ? (0).toString() : (100 * (clickedDone[i] / d)).toFixed(1))
   return {
-    heatingNotificationData: JSON.stringify(heatingNotificationData)
+    heatingNotificationData
   }
 }
 
