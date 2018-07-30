@@ -158,6 +158,59 @@
   </script>
 </div>
 <div class="chartContainer">
+  <h4>Zapp Hibernations</h4>
+  <canvas id="hibernationChart"></canvas>
+  <script>
+    var ctx = document.getElementById('hibernationChart').getContext('2d');
+    let hibernationChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: '% of Zapp Driven Hibernations',
+            data: {{{dashboardData.hibernationData.hibernatedPercentages}}},
+            borderColor: '#EF103C',
+            fill: false
+        }, {
+            label: '% of Users Clicked "Not Tonight"',
+            data: {{{dashboardData.hibernationData.notTonightPercentages}}},
+            borderColor: '#0367BF',
+            fill: false
+        }, {
+            label: '% Other',
+            data: {{{dashboardData.hibernationData.otherPercentages}}},
+            borderColor: '#3A2E39',
+            fill: false
+        }
+        ],
+        labels: {{{dashboardData.labels}}}
+    },
+    options: {
+      maintainAspectRatio: false,
+      elements: {
+        line: {
+          tension: 0
+        }
+      },
+        scales: {
+          xAxes: [{
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Weekdays in Zapp trial'
+                }
+            }],
+            yAxes: [{
+                ticks: {
+                    stepSize: 10,
+                    suggestedMax: 100
+                }
+ 
+            }]
+        }
+    }
+});
+  </script>
+</div>
+<div class="chartContainer">
   <h4>Heating Notification Responses</h4>
   <canvas id="heatingNotificationChart"></canvas>
   <script>

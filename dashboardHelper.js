@@ -9,6 +9,7 @@ module.exports = {
     const dailyUserData = await getDailyUserData(companyName, totalUsers)
     const installationData = await getInstallationData(companyName)
     const optedInData = await getOptedInData(companyName, totalUsers)
+    const hibernationData = await getHibernationData(companyName, totalUsers)
     const heatingNotificationData = await getHeatingNotificationData(companyName)
     return {
       labels: JSON.stringify(labels),
@@ -16,6 +17,7 @@ module.exports = {
       dailyUserData,
       installationData,
       optedInData,
+      hibernationData,
       heatingNotificationData
     }
   },
@@ -215,6 +217,48 @@ async function getOptedInDataByActionId (companyName, optInActionId, optOutActio
   ORDER BY datetable.date ASC 
   ;`, [companyName, optInActionId, optOutActionId])
   return data.rows
+}
+
+async function getHibernationData (companyName, totalUsers) {
+  const data = await query(`
+  SELECT datetable.date, COALESCE(a1.hibernated, 0) AS hibernated, COALESCE(a1.nottonight, 0) AS nottonight 
+  FROM  
+  (
+    select i::date AS date from generate_series(
+    (
+    SELECT timestamp::date FROM action_log
+    ORDER BY timestamp ASC
+    LIMIT 1
+    ), 
+      current_date, '1 day'::interval) i
+      WHERE (EXTRACT(ISODOW FROM i) < 6)
+  ) AS datetable 
+  LEFT JOIN (
+  
+    SELECT timestamp::date AS date, COUNT(NULLIF(action_id = 11, FALSE)) AS hibernated, COUNT(NULLIF(action_id = 12, FALSE)) AS nottonight
+    FROM action_log
+    INNER JOIN company ON action_log.company_id = company.id
+    WHERE (EXTRACT(ISODOW FROM "timestamp") < 6)
+    AND company.name ILIKE $1
+    GROUP BY (date)
+    ORDER BY (date)
+  ) AS a1
+  
+  ON datetable.date = a1.date;`, [companyName])
+  const hibernated = data.rows.map(d => parseInt(d.hibernated))
+  const notTonight = data.rows.map(d => parseInt(d.nottonight))
+  totalUsers = totalUsers.map(d => parseInt(d.totalusers))
+  const other = totalUsers.map((d, i) => d - hibernated[i] - notTonight[i])
+
+  const hibernatedPercentages = calculateAsPercentageOfTotalUsers(hibernated, totalUsers)
+  const notTonightPercentages = calculateAsPercentageOfTotalUsers(notTonight, totalUsers)
+  const otherPercentages = calculateAsPercentageOfTotalUsers(other, totalUsers)
+
+  return {
+    hibernatedPercentages: JSON.stringify(hibernatedPercentages),
+    notTonightPercentages: JSON.stringify(notTonightPercentages),
+    otherPercentages: JSON.stringify(otherPercentages)
+  }
 }
 
 async function getHeatingNotificationData (companyName) {
