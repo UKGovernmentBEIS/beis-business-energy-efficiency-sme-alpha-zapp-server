@@ -1,7 +1,6 @@
 const { query } = require('./databaseClient')
 
 module.exports = {
-
   getCumulativeData: async function (companyName) {
     const zappHibernations = await getCumulativeDataByAction(companyName, 'ZappHibernation')
     const heatingActions = await getCumulativeDataByAction(companyName, 'HeatingFirstLoginDone')
@@ -13,7 +12,7 @@ module.exports = {
 
   getChartData: async function (companyName) {
     const totalUsers = await getTotalUsersData(companyName)
-    const labels = [...Array(totalUsers.length).keys()].map(k => `${k + 1}`)
+    const labels = new Array(totalUsers.length).fill().map((_, i) => (i + 1).toString()) // 1, 2, ... , n
 
     const dailyUserData = await getDailyUserData(companyName, totalUsers)
     const installationData = await getInstallationData(companyName)
@@ -32,7 +31,7 @@ module.exports = {
 }
 
 async function getCumulativeDataByAction (companyName, action) {
-  const data = await query(`SELECT 
+  const data = await query(`SELECT
   company.name, action.code
   FROM action_log
   INNER JOIN company ON action_log.company_id = company.id
@@ -52,15 +51,15 @@ async function getDailyUserData (companyName, totalUsers) {
 }
 
 async function getActiveUsersData (companyName) {
-  const data = await query(`SELECT 
-  datetable.date, COALESCE(activeuserstable.activeusers, 0) AS activeusers 
+  const data = await query(`SELECT
+  datetable.date, COALESCE(activeuserstable.activeusers, 0) AS activeusers
   FROM (
     SELECT i::date AS date from generate_series((
       SELECT timestamp::date FROM action_log
       ORDER BY timestamp ASC
-      LIMIT 1), 
+      LIMIT 1),
     current_date, '1 day'::interval) AS i
-  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
+  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable
   LEFT JOIN (
     SELECT activedaystable.date, COUNT(pseudonym) AS activeusers
       FROM (
@@ -82,15 +81,15 @@ async function getActiveUsersData (companyName) {
 }
 
 async function getTotalUsersData (companyName) {
-  const data = await query(`SELECT 
-  datetable.date, COUNT(installtable.pseudonym) AS totalusers 
+  const data = await query(`SELECT
+  datetable.date, COUNT(installtable.pseudonym) AS totalusers
   FROM (
     SELECT i::date AS date from generate_series((
       SELECT timestamp::date FROM action_log
       ORDER BY timestamp ASC
-      LIMIT 1), 
+      LIMIT 1),
     current_date, '1 day'::interval) AS i
-  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
+  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable
   LEFT JOIN (
     SELECT  a1.pseudonym,  a1."timestamp"::date AS installdate, a2."timestamp"::date AS uninstalldate
     FROM action_log AS a1
@@ -106,15 +105,15 @@ async function getTotalUsersData (companyName) {
 }
 
 async function getInstallationData (companyName) {
-  const data = await query(`SELECT 
+  const data = await query(`SELECT
   datetable.date, COALESCE(a1.installs, 0) AS installs, COALESCE(a1.uninstalls, 0) AS uninstalls
   FROM (
     SELECT i::date AS date from generate_series((
       SELECT timestamp::date FROM action_log
       ORDER BY timestamp ASC
-      LIMIT 1), 
+      LIMIT 1),
     current_date, '1 day'::interval) AS i
-  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
+  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable
   LEFT JOIN (
     SELECT timestamp::date AS date, COUNT(NULLIF(action_id = (
       SELECT id FROM action WHERE code ILIKE 'InstalledZapp'), FALSE)) AS installs, COUNT(NULLIF(action_id = (
@@ -158,17 +157,17 @@ function calculateAsPercentageOfTotalUsers (values, totalUsers) {
 }
 
 async function getOptedInDataByActionCode (companyName, optInActionCode, optOutActionCode) {
-  const data = await query(`SELECT 
-  datetable.date, COUNT(optintable.pseudonym) AS optedinusers 
+  const data = await query(`SELECT
+  datetable.date, COUNT(optintable.pseudonym) AS optedinusers
   FROM (
     SELECT i::date AS date from generate_series((
       SELECT timestamp::date FROM action_log
       ORDER BY timestamp ASC
-      LIMIT 1), 
+      LIMIT 1),
     current_date, '1 day'::interval) AS i
-  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
+  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable
   LEFT JOIN (
-    SELECT pseudonym, optindate, MIN(optoutdate) AS optoutdate 
+    SELECT pseudonym, optindate, MIN(optoutdate) AS optoutdate
     FROM (
       SELECT  a1.pseudonym,  a1."timestamp" AS optindate, a2."timestamp" AS optoutdate
       FROM action_log AS a1
@@ -178,25 +177,25 @@ async function getOptedInDataByActionCode (companyName, optInActionCode, optOutA
     INNER JOIN company ON a1.company_id = company.id
     WHERE a1.action_id = (
       SELECT id FROM action WHERE code ILIKE $2) AND company.name ILIKE $1) AS dateranges
-  GROUP BY pseudonym, optindate) 
+  GROUP BY pseudonym, optindate)
   AS optintable
   ON optintable.optindate <= datetable.date + interval '1 day' AND (optintable.optoutdate > datetable.date + interval '1 day' OR optintable.optoutdate IS NULL)
   GROUP BY datetable.date
-  ORDER BY datetable.date ASC 
+  ORDER BY datetable.date ASC
   ;`, [companyName, optInActionCode, optOutActionCode])
   return data.rows
 }
 
 async function getHibernationData (companyName, totalUsers) {
-  const data = await query(`SELECT 
-  datetable.date, COALESCE(a1.hibernated, 0) AS hibernated, COALESCE(a1.nottonight, 0) AS nottonight 
+  const data = await query(`SELECT
+  datetable.date, COALESCE(a1.hibernated, 0) AS hibernated, COALESCE(a1.nottonight, 0) AS nottonight
   FROM (
     SELECT i::date AS date from generate_series((
       SELECT timestamp::date FROM action_log
       ORDER BY timestamp ASC
-      LIMIT 1), 
+      LIMIT 1),
     current_date, '1 day'::interval) AS i
-  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
+  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable
   LEFT JOIN (
     SELECT timestamp::date AS date, COUNT(NULLIF(action_id = (
       SELECT id FROM action WHERE code ILIKE 'ZappHibernation'), FALSE)) AS hibernated, COUNT(NULLIF(action_id = (
@@ -227,15 +226,15 @@ async function getHibernationData (companyName, totalUsers) {
 }
 
 async function getHeatingNotificationData (companyName) {
-  const data = await query(`SELECT 
-  datetable.date, COALESCE(a1.clickedDone, 0) AS clickeddone, COALESCE(a1.clickedNotNow, 0) AS clickednotnow 
+  const data = await query(`SELECT
+  datetable.date, COALESCE(a1.clickedDone, 0) AS clickeddone, COALESCE(a1.clickedNotNow, 0) AS clickednotnow
   FROM (
     SELECT i::date AS date from generate_series((
       SELECT timestamp::date FROM action_log
       ORDER BY timestamp ASC
-      LIMIT 1), 
+      LIMIT 1),
     current_date, '1 day'::interval) AS i
-  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable 
+  WHERE (EXTRACT(ISODOW FROM i) < 6)) AS datetable
   LEFT JOIN (
     SELECT timestamp::date AS date, COUNT(NULLIF(action_id = (
       SELECT id FROM action WHERE code ILIKE 'HeatingFirstLoginDone'), FALSE)) AS clickedDone, COUNT(NULLIF(action_id = (

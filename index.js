@@ -1,19 +1,22 @@
 const apicache = require('apicache')
-const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser')
-const csv = require('csv-express')
-const dashboardHelper = require('./dashboardHelper')
-const enforce = require('express-sslify')
-const exphbs = require('express-handlebars')
 const express = require('express')
+const basicAuth = require('express-basic-auth')
 const flash = require('express-flash')
-const { query } = require('./databaseClient')
-const request = require('request')
+const exphbs = require('express-handlebars')
 const session = require('express-session')
+const enforce = require('express-sslify')
+const request = require('request')
+
+const dashboardHelper = require('./dashboardHelper')
+const { query } = require('./databaseClient')
 
 const app = express()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
+
+// Required for side effects. Creates res.csv() function.
+require('csv-express')
 
 const cache = apicache.options({ statusCodes: { include: [200] } }).middleware
 
@@ -145,8 +148,9 @@ io.on('connection', socket => {
 
     if (company.id && userPseudonym && actionId) {
       try {
-        await query(`INSERT INTO action_log(company_id, pseudonym, action_id)
-        VALUES ($1, $2, $3);`, [company.id, userPseudonym, actionId])
+        await query(
+          `INSERT INTO action_log(company_id, pseudonym, action_id) VALUES ($1, $2, $3);`,
+          [company.id, userPseudonym, actionId])
       } catch (err) {
         console.warn(err)
       }
@@ -176,12 +180,12 @@ async function getActionId (code) {
 }
 
 async function getAllDataForDownload (code) {
-  return query(`SELECT 
-    to_char(timestamp::date,'DD/MM/YYYY') AS date,  
-    timestamp::time(0) AS time,  
-    company.name AS company, 
-    pseudonym, 
-    action.code, 
+  return query(`SELECT
+    to_char(timestamp::date,'DD/MM/YYYY') AS date,
+    timestamp::time(0) AS time,
+    company.name AS company,
+    pseudonym,
+    action.code,
     action.description
   FROM action_log
   INNER JOIN company ON action_log.company_id = company.id
@@ -189,12 +193,12 @@ async function getAllDataForDownload (code) {
 }
 
 async function getCompanyDataForDownload (companyName) {
-  return query(`SELECT 
-    to_char(timestamp::date,'DD/MM/YYYY') AS date,  
-    timestamp::time(0) AS time,  
-    company.name AS company, 
-    pseudonym, 
-    action.code, 
+  return query(`SELECT
+    to_char(timestamp::date,'DD/MM/YYYY') AS date,
+    timestamp::time(0) AS time,
+    company.name AS company,
+    pseudonym,
+    action.code,
     action.description
   FROM action_log
   INNER JOIN company ON action_log.company_id = company.id
