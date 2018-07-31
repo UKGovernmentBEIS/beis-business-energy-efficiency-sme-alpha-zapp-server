@@ -1,148 +1,89 @@
-var init = function (chartData) {
+window.initCharts = function (chartData) {
+  const Chart = window.Chart
 
-  const numberChartOptions = {
+  const weekdaysXAxes = [{ scaleLabel: { display: true, labelString: 'Weekdays in Zapp trial' } }]
+  const commonChartOptions = Object.freeze({
     maintainAspectRatio: false,
-    elements: {
-      line: {
-        tension: 0
-      }
-    },
+    elements: { line: { tension: 0 } }
+  })
+
+  const numberChartOptions = Object.assign({
     scales: {
-      xAxes: [{
-        scaleLabel: {
-          display: true,
-          labelString: 'Weekdays in Zapp trial'
-        }
-      }],
-      yAxes: [{
-        ticks: {
-          stepSize: 5
-        }
-      }]
+      xAxes: weekdaysXAxes,
+      yAxes: [{ ticks: { stepSize: 5 } }]
     }
+  }, commonChartOptions)
+
+  const percentageChartOptions = Object.assign({
+    scales: {
+      xAxes: weekdaysXAxes,
+      yAxes: [{ ticks: { stepSize: 10, suggestedMin: 0, suggestedMax: 100 } }]
+    }
+  }, commonChartOptions)
+
+  const lineColors = ['#EF103C', '#3A2E39', '#0367BF']
+
+  function chart (canvasId, options, datasets) {
+    const ctx = document.getElementById(canvasId).getContext('2d')
+    const datasetsWithStyle = datasets.map((dataset, i) => {
+      const styleOptions = { fill: false, borderColor: lineColors[i] }
+      return Object.assign(styleOptions, dataset)
+    })
+    const data = { datasets: datasetsWithStyle, labels: chartData.labels }
+    return new Chart(ctx, { type: 'line', options, data })
   }
 
-  const percentageChartOptions = {
-    maintainAspectRatio: false,
-    elements: {
-      line: {
-        tension: 0
-      }
+  chart('usersChart', numberChartOptions, [
+    {
+      label: 'Daily Total Users',
+      data: chartData.dailyUserData.totalUsers
     },
-    scales: {
-      xAxes: [{
-        scaleLabel: {
-          display: true,
-          labelString: 'Weekdays in Zapp trial'
-        }
-      }],
-      yAxes: [{
-        ticks: {
-          stepSize: 10,
-          suggestedMin: 0,
-          suggestedMax: 100
-        }
-      }]
+    {
+      label: 'Daily Active Users',
+      data: chartData.dailyUserData.activeUsers
     }
-  }
+  ])
 
-  var ctx = document.getElementById('usersChart').getContext('2d');
-  let usersChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: 'Daily Total Users',
-        data: chartData.dailyUserData.totalUsers,
-        borderColor: '#EF103C',
-        fill: false
-      }, {
-        label: 'Daily Active Users',
-        data: chartData.dailyUserData.activeUsers,
-        borderColor: '#3A2E39',
-        fill: false
-      }],
-      labels: chartData.labels
+  chart('installsChart', numberChartOptions, [
+    {
+      label: 'Zapp Installations',
+      data: chartData.installationData.installations
     },
-    options: numberChartOptions
-  })
+    {
+      label: 'Zapp Uninstallations',
+      data: chartData.installationData.uninstallations
+    }
+  ])
 
-  var ctx = document.getElementById('installsChart').getContext('2d');
-  let installsChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: 'Zapp Installations',
-        data: chartData.installationData.installations,
-        borderColor: '#EF103C',
-        fill: false
-      }, {
-        label: 'Zapp Uninstallations',
-        data: chartData.installationData.uninstallations,
-        borderColor: '#3A2E39',
-        fill: false
-      }],
-      labels: chartData.labels
-    },
-    options: numberChartOptions
-  })
+  chart('optedInChart', percentageChartOptions, [
+    {
+      label: '% of Users Opted In to Hibernation',
+      data: chartData.optedInData.optedInHibernationPercentages
+    }, {
+      label: '% of Users Opted In to Heating',
+      data: chartData.optedInData.optedInHeatingPercentages
+    }
+  ])
 
-  var ctx = document.getElementById('optedInChart').getContext('2d');
-  let optedInChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: '% of Users Opted In to Hibernation',
-        data: chartData.optedInData.optedInHibernationPercentages,
-        borderColor: '#EF103C',
-        fill: false
-      }, {
-        label: '% of Users Opted In to Heating',
-        data: chartData.optedInData.optedInHeatingPercentages,
-        borderColor: '#3A2E39',
-        fill: false
-      }],
-      labels: chartData.labels
+  chart('hibernationChart', percentageChartOptions, [
+    {
+      label: '% of Zapp Driven Hibernations',
+      data: chartData.hibernationData.hibernatedPercentages
     },
-    options: percentageChartOptions
-  })
+    {
+      label: '% of Users Clicked "Not Tonight"',
+      data: chartData.hibernationData.notTonightPercentages
+    },
+    {
+      label: '% Other',
+      data: chartData.hibernationData.otherPercentages
+    }
+  ])
 
-  var ctx = document.getElementById('hibernationChart').getContext('2d');
-  let hibernationChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: '% of Zapp Driven Hibernations',
-        data: chartData.hibernationData.hibernatedPercentages,
-        borderColor: '#EF103C',
-        fill: false
-      }, {
-        label: '% of Users Clicked "Not Tonight"',
-        data: chartData.hibernationData.notTonightPercentages,
-        borderColor: '#0367BF',
-        fill: false
-      }, {
-        label: '% Other',
-        data: chartData.hibernationData.otherPercentages,
-        borderColor: '#3A2E39',
-        fill: false
-      }],
-      labels: chartData.labels
-    },
-    options: percentageChartOptions
-  })
-
-  var ctx = document.getElementById('heatingNotificationChart').getContext('2d');
-  let heatingNotificationChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: '% of Heating Actions Taken When Heating Notification Shown',
-        data: chartData.heatingNotificationData.heatingNotificationData,
-        borderColor: '#EF103C',
-        fill: false
-      }],
-      labels: chartData.labels
-    },
-    options: percentageChartOptions
-  })
+  chart('heatingNotificationChart', percentageChartOptions, [
+    {
+      label: '% of Heating Actions Taken When Heating Notification Shown',
+      data: chartData.heatingNotificationData.heatingNotificationData
+    }
+  ])
 }
