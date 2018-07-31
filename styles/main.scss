@@ -48,19 +48,18 @@ h3 {
   margin: 3em 0;
 }
 
-.companyData {
+.company-data {
   margin-top: 3em;
+  th {
+    width: 50%;
+  }
 }
 
 .contact {
   margin-top: 3em;
 }
 
-.companyData th {
-  width: 50%;
-}
-
-.chartContainer {
+.chart-container {
   height: 300px;
   margin: 100px 0;
 

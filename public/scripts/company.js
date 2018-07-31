@@ -33,7 +33,7 @@ window.initCharts = function (chartData) {
     return new Chart(ctx, { type: 'line', options, data })
   }
 
-  chart('usersChart', numberChartOptions, [
+  chart('users-chart', numberChartOptions, [
     {
       label: 'Daily Total Users',
       data: chartData.dailyUserData.totalUsers
@@ -44,7 +44,7 @@ window.initCharts = function (chartData) {
     }
   ])
 
-  chart('installsChart', numberChartOptions, [
+  chart('installs-chart', numberChartOptions, [
     {
       label: 'Zapp Installations',
       data: chartData.installationData.installations
@@ -55,7 +55,7 @@ window.initCharts = function (chartData) {
     }
   ])
 
-  chart('optedInChart', percentageChartOptions, [
+  chart('opted-in-chart', percentageChartOptions, [
     {
       label: '% of Users Opted In to Hibernation',
       data: chartData.optedInData.optedInHibernationPercentages
@@ -65,7 +65,7 @@ window.initCharts = function (chartData) {
     }
   ])
 
-  chart('hibernationChart', percentageChartOptions, [
+  chart('hibernation-chart', percentageChartOptions, [
     {
       label: '% of Zapp Driven Hibernations',
       data: chartData.hibernationData.hibernatedPercentages
@@ -80,7 +80,7 @@ window.initCharts = function (chartData) {
     }
   ])
 
-  chart('heatingNotificationChart', percentageChartOptions, [
+  chart('heating-notification-chart', percentageChartOptions, [
     {
       label: '% of Heating Actions Taken When Heating Notification Shown',
       data: chartData.heatingNotificationData.heatingNotificationData
