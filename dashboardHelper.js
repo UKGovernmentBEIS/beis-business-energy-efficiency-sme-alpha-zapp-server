@@ -12,7 +12,7 @@ module.exports = {
 
   getChartData: async function (companyName) {
     const totalUsers = await getTotalUsersData(companyName)
-    const labels = new Array(totalUsers.length).fill().map((_, i) => (i + 1).toString()) // 1, 2, ... , n
+    const labels = new Array(totalUsers.length).fill().map((_, i) => (i + 1).toString()) // '1', '2', etc.
 
     const dailyUserData = await getDailyUserData(companyName, totalUsers)
     const installationData = await getInstallationData(companyName)
