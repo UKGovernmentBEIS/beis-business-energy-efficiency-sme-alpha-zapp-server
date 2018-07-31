@@ -1,18 +1,22 @@
 const apicache = require('apicache')
 const bodyParser = require('body-parser')
-const csv = require('csv-express')
 const express = require('express')
 const basicAuth = require('express-basic-auth')
 const flash = require('express-flash')
 const exphbs = require('express-handlebars')
 const session = require('express-session')
 const enforce = require('express-sslify')
-const { Client } = require('pg')
 const request = require('request')
+
+const dashboardHelper = require('./dashboardHelper')
+const { query } = require('./databaseClient')
 
 const app = express()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
+
+// Required for side effects. Creates res.csv() function.
+require('csv-express')
 
 const cache = apicache.options({ statusCodes: { include: [200] } }).middleware
 
@@ -56,8 +60,13 @@ app.get('/admin', auth, async (req, res) => {
 app.get('/admin/company/:code', async (req, res) => {
   const { code } = req.params
   const company = await getCompany(code)
-  const zappData = await generateCompanyData(company.name)
-  res.render('company', { name: company.name, data: zappData })
+  const cumulativeData = await dashboardHelper.getCumulativeData(company.name)
+  const chartData = await dashboardHelper.getChartData(company.name)
+  res.render('company', {
+    name: company.name,
+    cumulativeData,
+    chartData: JSON.stringify(chartData)
+  })
 })
 
 app.post('/admin/company/:code/delete', auth, async (req, res) => {
@@ -139,8 +148,9 @@ io.on('connection', socket => {
 
     if (company.id && userPseudonym && actionId) {
       try {
-        await query(`INSERT INTO action_log(company_id, pseudonym, action_id)
-        VALUES ($1, $2, $3);`, [company.id, userPseudonym, actionId])
+        await query(
+          `INSERT INTO action_log(company_id, pseudonym, action_id) VALUES ($1, $2, $3);`,
+          [company.id, userPseudonym, actionId])
       } catch (err) {
         console.warn(err)
       }
@@ -170,12 +180,12 @@ async function getActionId (code) {
 }
 
 async function getAllDataForDownload (code) {
-  return query(`SELECT 
-    to_char(timestamp::date,'DD/MM/YYYY') AS date,  
-    timestamp::time(0) AS time,  
-    company.name AS company, 
-    pseudonym, 
-    action.code, 
+  return query(`SELECT
+    to_char(timestamp::date,'DD/MM/YYYY') AS date,
+    timestamp::time(0) AS time,
+    company.name AS company,
+    pseudonym,
+    action.code,
     action.description
   FROM action_log
   INNER JOIN company ON action_log.company_id = company.id
@@ -183,50 +193,17 @@ async function getAllDataForDownload (code) {
 }
 
 async function getCompanyDataForDownload (companyName) {
-  return query(`SELECT 
-    to_char(timestamp::date,'DD/MM/YYYY') AS date,  
-    timestamp::time(0) AS time,  
-    company.name AS company, 
-    pseudonym, 
-    action.code, 
+  return query(`SELECT
+    to_char(timestamp::date,'DD/MM/YYYY') AS date,
+    timestamp::time(0) AS time,
+    company.name AS company,
+    pseudonym,
+    action.code,
     action.description
   FROM action_log
   INNER JOIN company ON action_log.company_id = company.id
   INNER JOIN action ON action_log.action_id = action.id
   WHERE company.name ILIKE $1;`, [companyName])
-}
-
-async function generateCompanyData (companyName) {
-  const zappHibernations = await getNumbersForAction(companyName, 'ZappHibernation')
-  return {
-    zappHibernations
-  }
-}
-
-async function getNumbersForAction (companyName, action) {
-  const data = await query(`SELECT 
-  company.name, action.code
-  FROM action_log
-  INNER JOIN company ON action_log.company_id = company.id
-  INNER JOIN action ON action_log.action_id = action.id
-  WHERE company.name ILIKE $1
-  AND action.code ILIKE $2;`, [companyName, action])
-  return data.rowCount
-}
-
-async function query (queryTextOrConfig, values) {
-  const client = getPgClient()
-  await client.connect()
-  const result = await client.query(queryTextOrConfig, values)
-  await client.end()
-  return result
-}
-
-function getPgClient () {
-  return new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.POSTGRES_USE_SSL === 'yes'
-  })
 }
 
 function updateCompanyUsersCount (company) {

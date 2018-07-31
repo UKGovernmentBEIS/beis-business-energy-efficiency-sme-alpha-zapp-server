@@ -45,9 +45,25 @@ h3 {
 }
 
 .download {
-  margin-top: 50px;
+  margin: 3em 0;
 }
 
-.companyData {
-  margin-top: 50px;
+.company-data {
+  margin-top: 3em;
+  th {
+    width: 50%;
+  }
+}
+
+.contact {
+  margin-top: 3em;
+}
+
+.chart-container {
+  height: 300px;
+  margin: 100px 0;
+
+  canvas {
+    margin-top: 20px;
+  }
 }

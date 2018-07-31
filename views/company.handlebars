@@ -1,12 +1,59 @@
 <h1>Stats for {{name}}</h1>
-<div class="companyData">
-    <h3>Zapp Data</h3>
-    Zapp driven hibernations: {{data.zappHibernations}}
+<div class="company-data">
+  <h3>Zapp Data</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cumulative Zapp driven hibernations</td>
+        <td>{{cumulativeData.zappHibernations}}</td>
+      </tr>
+      <tr>
+        <td>Cumulative Zapp driven heating actions</td>
+        <td>{{cumulativeData.heatingActions}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="chart-container">
+  <h4>Zapp Users</h4>
+  <canvas id="users-chart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h4>Zapp Installations and Uninstallations</h4>
+  <canvas id="installs-chart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h4>Users Opted In</h4>
+  <canvas id="opted-in-chart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h4>Zapp Hibernations</h4>
+  <canvas id="hibernation-chart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h4>Heating Notification Responses</h4>
+  <canvas id="heating-notification-chart"></canvas>
 </div>
 
 <div class="download">
-    <h3>Download Zapp usage data for {{name}}</h3>
-    <a class="download-button btn btn-primary" href="/admin/download/{{name}}/Zapp_usage_data.csv">
-        <i class="fas fa-download"></i> Download
-    </a>
+  <h3>Download Zapp Usage Data for {{name}}</h3>
+  <a class="download-button btn btn-primary" href="/admin/download/{{name}}/Zapp_usage_data.csv">
+    <i class="fas fa-download"></i> Download
+  </a>
 </div>
+
+<script src='/scripts/company.js'></script>
+<script>
+  initCharts({{{chartData}}})
+</script>
